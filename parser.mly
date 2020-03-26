@@ -46,14 +46,14 @@ expr:
     | LITERAL
     | BLITERAL
     | ID
-    | LPAREN PLUS expr expr RPAREN
-    | LPARN MIUS expr expr RPAREN
-    | LPAREN MULT expr expr RPAREN
-    | LPAREN DIVIDE expr expr RPAREN
-    | LPAREN EQ expr expr RPAREN
-    | LPAREN NEQ expr expr RPAREN
-    | LPAREN LT expr expr RPAREN
-    | LPAREN GT expr expr RPAREN
+    (* | LPAREN PLUS expr expr RPAREN *)
+    (* | LPARN MIUS expr expr RPAREN *)
+    (* | LPAREN MULT expr expr RPAREN *)
+    (* | LPAREN DIVIDE expr expr RPAREN *)
+    (* | LPAREN EQ expr expr RPAREN *)
+    (* | LPAREN NEQ expr expr RPAREN *)
+    (* | LPAREN LT expr expr RPAREN *)
+    (* | LPAREN GT expr expr RPAREN *)
     (* | LPAREN expr RPAREN *)
     (* Not just ID so we can allow lambda *)
     | LPAREN op args_opt RPAREN

@@ -18,25 +18,26 @@ rule token = parse
 | "#"     { comment lexbuf }           (* Comments *)
 | '('      { LPAREN }
 | ')'      { RPAREN }
-| '+'      { PLUS }
-| '-'      { MINUS }
-| '*'      { MULT }
-| '/'      { DIVIDE }
+(* | '+'      { PLUS } *)
+(* | '-'      { MINUS } *)
+(* | '*'      { MULT } *)
+(* | '/'      { DIVIDE } *)
 | "define" { DEFINE }
 | "lambda" { LAMBDA }
 | "let"    { LET }
-| "="     { EQ }
-| "!="     { NEQ }
-| '<'      { LT }
-| '>'      { GT }
-| "and"     { AND }
-| "or"     { OR }
+(* | "="     { EQ } *)
+(* | "!="     { NEQ } *)
+(* | '<'      { LT } *)
+(* | '>'      { GT } *)
+(* | "and"     { AND } *)
+(* | "or"     { OR } *)
 | "if"     { IF }
 | "cond"   { COND }
 | "true"   { BLIT(true)  }
 | "false"  { BLIT(false) }
 | digit+ as lem  { LITERAL(int_of_string lem) }
 | letter (digit | letter | '_')* as lem { ID(lem) }
+| ['=' '-' '*' '/' '>' '<' "<=" ">=" '=' "!="] as lem { ID(lem)}
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 
