@@ -1,17 +1,7 @@
 { open Parser }
 
-rule token = parse
-  [' ' '\t' '\r' '\n'] { token lexbuf }
-| eof                 { EOF }
-| '.'                 { DOT }
-| '\''                { QUOTE }
-| '('                 { LEFT_BRACKET }
-| ')'                 { RIGHT_BRACKET }
-| ['0' - '9']+ as lit { INT_LITERAL(int_of_string lit) }
-| ['a' - 'z' 'A' - 'Z' '0' - '9' '!' '@' '#' '$' '%' '^' '&' '*' '-' '_' '=' '+' '|' '\\' '/' '?' '<' '>' ':' '~']+ as id { IDENTIFIER(id) }
-
 let digit = ['0'-'9']
-let letter = ['a'-'z' 'A'-'Z']
+let letter = ['a'-'z' 'A'-'Z' '?' '_' '!']
 
 rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)

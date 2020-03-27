@@ -1,16 +1,7 @@
 %{ open Ast %}
 
-%token EOF LEFT_BRACKET RIGHT_BRACKET DOT QUOTE
-%token <int> INT_LITERAL
-%token <string> IDENTIFIER
 
-%left LEFT_BRACKET RIGHT_BRACKET
 
-%start expr
-%type <Ast.expr> expr
-%type <Ast.expr> list_body
-
-%%
 
 expr: LEFT_BRACKET list_body RIGHT_BRACKET { $2 }
   | INT_LITERAL                            { IntLit($1) }
@@ -21,6 +12,25 @@ list_body: expr list_body                  { Cons($1, $2) }
   | expr DOT expr                          { Cons($1, $3) }
   |                                        { Nil }
 
+%token <int> LITERAL
+%token <bool> BLIT
+%token <string> ID
+%token LPAREN RPAREN
+%token IF COND
+%token DEFINE LAMBDA LET
+%token EOF
+
+
+%start program
+%type <Ast.program> program
+
+%%
+program:
+  | obj_list EOF { $1}
+
+obj_list:
+  | obj
+  | obj program
 (* Q: Can we just define "and" and "or", "plus",etc... as built in functions rather than make them keywords? Ask TA? *)
 (* Q: Should we separate expressions that return booleans? Scheme currently does not *)
 (* Q: How to deal with quotation? *)
@@ -60,6 +70,7 @@ expr:
     | LPAREN LET LPAREN bind_list RPAREN expr RPAREN
     | LPAREN COND LPAREN cond_list RPAREN
     | LPAREN IF expr expr expr RPAREN
+    | QUOTE LPAREN expr_list RPAREN
 
 bind_list:
     | LPAREN ID expr RPAREN
@@ -68,6 +79,10 @@ bind_list:
 cond_list:
     | LPAREN expr expr RPAREN
     | LPAREN expr expr RPAREN cond_list
+
+expr_list:
+    | expr
+    | expr expr_list
 
 args_opt:
     /*nothing*/
