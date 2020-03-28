@@ -17,25 +17,30 @@ program:
   | obj_list EOF { $1}
 
 obj_list:
-  | obj {[Program($1)]}
-  | obj program {Program($1)::$2}
+    /* nothing */ {[]}
+  | stat {[$1]}
+  | stat program {$1::$2}
 
-obj:
-    | expr {$1}
-    | op {$1}
+  (* Do I need to IMPLEMENTED TYPES ABOVE? *)
+stat:
+    | expr { Exp($1)}
+    | defn { Define($1)} 
+
 
 op:
     (* best way to define this to enable higher ordr functions? *)
     | LPAREN LAMBDA LPAREN defn_list RPAREN expr RPAREN {Lambda($4,$6)}
-    | ID {Id($1)}
+    | ID {Fun($1)}
 
+    
 defn:
-    | LPAREN DEFINE ID obj RPAREN {Define($3,$4)}
-    | LPAREN DEFINE LPAREN ID defn_list RPAREN expr RPAREN {DefineFun($4,$5,$7)}
+    | LPAREN DEFINE ID expr RPAREN {DefineVar($3,$4)}
+    | LPAREN DEFINE ID op RPAREN {DefineFun($3,$4)}
+    | LPAREN DEFINE LPAREN ID defn_list RPAREN expr RPAREN {DefineNewFun($4,$5,$7)}
 
 defn_list:
-    | ID {[Id($1)]}
-    | ID defn_list {Id($1)::$2}
+    | ID {[$1]}
+    | ID defn_list {$1::$2}
 
 expr:
     | LITERAL {Literal($1)}
