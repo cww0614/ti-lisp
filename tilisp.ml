@@ -3,6 +3,7 @@ open Ast
 let rec print_ast = function
   | StrLit (x)  -> "\"" ^ String.escaped x ^ "\""
   | IntLit (x)  -> string_of_int x
+  | CharLit (x)  -> "'" ^ Char.escaped x  ^"'"
   | Id (name)   -> name
   | Quote (v)   -> "Quote [" ^ print_ast v ^ "]"
   | Cons (a, b) -> "Cons ["

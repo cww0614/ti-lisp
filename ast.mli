@@ -1,4 +1,5 @@
 type expr =
+| CharLit of char
 | StrLit of string
 | IntLit of int
 | Id of string
