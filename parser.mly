@@ -8,11 +8,13 @@
 
 %left LEFT_BRACKET RIGHT_BRACKET
 
-%start expr
-%type <Ast.expr> expr
-%type <Ast.expr> list_body
+%start program
+%type <Ast.expr list> program
 
 %%
+
+program: EOF     { [] }
+  | expr program { $1 :: $2 }
 
 expr: LEFT_BRACKET list_body RIGHT_BRACKET { $2 }
   | INT_LITERAL                            { IntLit($1) }

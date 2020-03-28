@@ -14,5 +14,5 @@ let rec print_ast = function
 
 let _ =
   let lexbuf = Lexing.from_channel stdin in
-  let expr = Parser.expr Scanner.token lexbuf in
-  print_endline (print_ast expr)
+  let program = Parser.program Scanner.token lexbuf in
+  List.iter (fun x -> print_endline (print_ast x)) program
