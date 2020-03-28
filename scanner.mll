@@ -27,7 +27,8 @@ rule token = parse
 | "false"  { BLIT(false) }
 | digit+ as lem  { LITERAL(int_of_string lem) }
 | letter (digit | letter | '_')* as lem { ID(lem) }
-| ['=' '-' '*' '/' '>' '<' "<=" ">=" '=' "!="] as lem { ID(lem)}
+| ['!' '<' '>']? ['='] as lem { ID(lem)}
+| ['-' '*' '/' '+' '=' '>' '<'] as lem {ID(lem)}
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 
@@ -36,3 +37,8 @@ and comment = parse
   ['\n' '\r'] { token lexbuf }
 | _    { comment lexbuf }
 
+{
+    let buf = Lexing.from_channel stdin in
+    let f = lex_float buf in
+    print_endline f
+}
