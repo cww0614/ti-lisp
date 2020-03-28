@@ -21,14 +21,12 @@ obj_list:
   | stat {[$1]}
   | stat program {$1::$2}
 
-  (* Do I need to IMPLEMENTED TYPES ABOVE? *)
 stat:
     | expr { Exp($1)}
     | defn { Define($1)} 
 
 
 op:
-    (* best way to define this to enable higher ordr functions? *)
     | LPAREN LAMBDA LPAREN defn_list RPAREN expr RPAREN {Lambda($4,$6)}
     | ID {Fun($1)}
 
@@ -46,16 +44,6 @@ expr:
     | LITERAL {Literal($1)}
     | BLITERAL {BoolLit($1)}
     | ID        {Id($1)}
-    (* | LPAREN PLUS expr expr RPAREN *)
-    (* | LPARN MIUS expr expr RPAREN *)
-    (* | LPAREN MULT expr expr RPAREN *)
-    (* | LPAREN DIVIDE expr expr RPAREN *)
-    (* | LPAREN EQ expr expr RPAREN *)
-    (* | LPAREN NEQ expr expr RPAREN *)
-    (* | LPAREN LT expr expr RPAREN *)
-    (* | LPAREN GT expr expr RPAREN *)
-    (* | LPAREN expr RPAREN *)
-    (* Not just ID so we can allow lambda *)
     | LPAREN op args_opt RPAREN {Call($2,$3)}
     | LPAREN LET LPAREN bind_list RPAREN expr RPAREN {BindList($4,$6)}
     | LPAREN COND LPAREN cond_list RPAREN {CondList($4)}
