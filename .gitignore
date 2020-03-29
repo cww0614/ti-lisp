@@ -13,6 +13,7 @@
 *.cmxa
 *.mli
 *.ml
+*.output
 
 # ocamlbuild working directory
 _build/

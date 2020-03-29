@@ -15,7 +15,6 @@ and cond = Cond of expr * expr
 
 type defn =
     DefineVar of string * expr
-    | DefineFun of string * op
     | DefineNewFun of string * string list * expr
 
 type stat =
