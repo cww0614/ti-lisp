@@ -60,11 +60,14 @@ and string_of_expr = function
         | Some else_clause -> add_indent (string_of_expr else_clause)
         | None -> "" )
       ^ ")"
+  | Quote v -> "(quote " ^ string_of_expr v ^ ")"
+  | Cons (_, _) as cons -> "(" ^ string_of_cons cons ^ ")"
   | Nil -> ""
-  | _ ->
-      raise
-        (Failure
-           "Programming Error: invalid expression should have been caught in \
-            semantic analysis")
+
+and string_of_cons = function
+  | Cons (a, (Cons (_, _) as b)) -> string_of_expr a ^ " " ^ string_of_cons b
+  | Cons (a, Nil) -> string_of_expr a
+  | Cons (a, b) -> string_of_expr a ^ " . " ^ string_of_expr b
+  | _ -> raise (Failure "Invalid argument of string_of_cons")
 
 let string_of_stmt_block = List.map string_of_stmt
