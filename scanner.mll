@@ -6,6 +6,7 @@ rule token = parse
   [' ' '\t' '\r' '\n']      { token lexbuf }
 | eof                       { EOF }
 | '#'                       { comment lexbuf }
+| "..."                     { EXPANSION }
 | '.'                       { DOT }
 
 | "'\\/'"                   { CHAR_LITERAL '/' }
