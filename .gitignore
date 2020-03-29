@@ -11,6 +11,8 @@
 *.cmx
 *.cmxs
 *.cmxa
+*.mli
+*.ml
 
 # ocamlbuild working directory
 _build/
