@@ -23,12 +23,12 @@ rule token = parse
 (* | "or"     { OR } *)
 | "if"     { IF }
 | "cond"   { COND }
-| "true"   { BLIT(true)  }
-| "false"  { BLIT(false) }
+| "true"   { BLITERAL(true)  }
+| "false"  { BLITERAL(false) }
 | digit+ as lem  { LITERAL(int_of_string lem) }
 | letter (digit | letter | '_')* as lem { ID(lem) }
-| ['!' '<' '>']? ['='] as lem { ID(lem)}
-| ['-' '*' '/' '+' '=' '>' '<'] as lem {ID(lem)}
+| ['!' '<' '>'] ['='] as lem { ID(lem)}
+| ['-' '*' '/' '+' '=' '>' '<'] as lem {ID(Char.escaped lem)}
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 
@@ -36,9 +36,3 @@ and comment = parse
 (* TODO: Test if this actually only comments on a line basis *)
   ['\n' '\r'] { token lexbuf }
 | _    { comment lexbuf }
-
-{
-    let buf = Lexing.from_channel stdin in
-    let f = lex_float buf in
-    print_endline f
-}

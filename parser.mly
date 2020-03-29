@@ -1,11 +1,11 @@
 %{ open Ast %}
 
 %token <int> LITERAL
-%token <bool> BLIT
+%token <bool> BLITERAL
 %token <string> ID
 %token LPAREN RPAREN
 %token IF COND
-%token DEFINE LAMBDA LET
+%token DEFINE LAMBDA LET QUOTE
 %token EOF
 
 
