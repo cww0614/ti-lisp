@@ -200,6 +200,8 @@ let check =
         ("/", Function (Value, 2, 2));
         ("=", Function (Value, 2, 2));
         ("display", Function (Void, 1, 256));
+        ("true", Value);
+        ("false", Value);
       ]
   in
   check_iter builtin_variables

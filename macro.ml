@@ -31,6 +31,7 @@ let builtin_macros =
              let lexbuf = Lexing.from_string rule_text in
              let expr = Parser.program Scanner.token lexbuf in
              (name, analyze_syntax_rules (List.hd expr)))
+       (* Some of the macro definitions are adpated from r5rs specification *)
        [
          ( "cond",
            {| (syntax-rules (else)
@@ -43,6 +44,37 @@ let builtin_macros =
                      (begin body ...)))
                 ((_ (else body ...))
                  (begin body ...))) |}
+         );
+         ( "define",
+           {| (syntax-rules ()
+                ((_ (name args ...) body ...)
+                 (define name
+                   (lambda (args ...)
+                     body ...)))) |}
+         );
+         ( "and",
+           {| (syntax-rules ()
+                ((_) true)
+                ((_ test) test)
+                ((_ test1 test2 ...)
+            (if test1 (and test2 ...) false))) |}
+         );
+         ( "or",
+           {| (syntax-rules ()
+                ((_) false)
+                ((_ test) test)
+                ((_ test1 test2 ...)
+                 (let ((x test1))
+                   (if x x (or test2 ...))))) |}
+         );
+         ( "let*",
+           {| (syntax-rules ()
+                ((_ ((name value)) body ...)
+                 (let ((name value)) body ...))
+                ((_ ((name value) more ...) body ...)
+                 (let ((name value))
+                   (let* (more ...)
+                     body ...)))) |}
          );
        ])
 

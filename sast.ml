@@ -40,7 +40,7 @@ and string_of_expr = function
       ^ ")"
   | Let (bindings, body) ->
       "(let ("
-      ^ String.concat "\n"
+      ^ String.concat " "
           (List.map
              (function
                | name, value -> "(" ^ name ^ " " ^ string_of_expr value ^ ")")
@@ -60,6 +60,7 @@ and string_of_expr = function
         | Some else_clause -> add_indent (string_of_expr else_clause)
         | None -> "" )
       ^ ")"
+  | Nil -> ""
   | _ ->
       raise
         (Failure
