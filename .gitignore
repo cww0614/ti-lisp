@@ -14,6 +14,7 @@
 *.mli
 *.ml
 *.output
+tilisp
 
 # ocamlbuild working directory
 _build/

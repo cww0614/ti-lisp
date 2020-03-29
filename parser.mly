@@ -33,7 +33,7 @@ op:
     
 defn:
     | LPAREN DEFINE ID expr RPAREN {DefineVar($3,$4)}
-    | LPAREN DEFINE LPAREN ID defn_list RPAREN expr RPAREN {DefineFun($4,$5,$7)}
+    | LPAREN DEFINE LPAREN ID defn_list RPAREN expr RPAREN {DefineNewFun($4,$5,$7)}
 
 defn_list:
     | ID {[$1]}

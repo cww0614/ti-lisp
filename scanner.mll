@@ -1,7 +1,7 @@
 { open Parser }
 
 let digit = ['0'-'9']
-let letter = ['a'-'z' 'A'-'Z' '?' '_' '!']
+let letter = ['a'-'z' 'A'-'Z' '?' '_' '!' '-']
 
 rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
