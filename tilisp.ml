@@ -1,16 +1,12 @@
 open Ast
 
-let rec print_ast = function
-  | IntLit (x)  -> string_of_int x
-  | Id (name)   -> name
-  | Quote (v)   -> "Quote [" ^ print_ast v ^ "]"
-  | Cons (a, b) -> "Cons ["
-                   ^ print_ast a
-                   ^ ", " ^ print_ast b
-                   ^ "]"
-  | Nil         -> "Nil"
-
 let _ =
   let lexbuf = Lexing.from_channel stdin in
-  let expr = Parser.expr Scanner.token lexbuf in
-  print_endline (print_ast expr)
+  let program = Parser.program Scanner.token lexbuf in
+  let expanded = Macro.expand_all program in
+  let program = Semant.check expanded in
+  print_endline
+    (String.concat "\n\n"
+       (List.filter
+          (fun x -> String.length x > 0)
+          (Sast.string_of_stmt_block program)))
