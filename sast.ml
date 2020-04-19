@@ -7,7 +7,7 @@ and expr =
   | Id of string
   | Cons of expr * expr
   | Nil
-  | Quote of expr
+  | Symbol of string
   | Begin of stmt list
   | Lambda of string list * stmt list
   | Let of (string * expr) list * stmt list
@@ -16,16 +16,22 @@ and expr =
 
 type program = stmt list
 
-let add_indent str =
+(* Add indentation to each line in the string, useful for pretty
+   printing the sast.
+
+   Example: "a\nb\nc" => " a\n b\n c" *)
+let add_indent (str : string) : string =
   let lines = String.split_on_char '\n' str in
   String.concat "\n" (List.map (fun x -> "  " ^ x) lines)
 
-let rec string_of_stmt = function
-  | Define (name, expr) -> "(define a " ^ string_of_expr expr ^ ")"
-  | Set (name, expr) -> "(set! a " ^ string_of_expr expr ^ ")"
+(* Convert stmt to string for inspection *)
+let rec string_of_stmt : stmt -> string = function
+  | Define (name, expr) -> "(define " ^ name ^ " " ^ string_of_expr expr ^ ")"
+  | Set (name, expr) -> "(set! " ^ name ^ " " ^ string_of_expr expr ^ ")"
   | Expr expr -> string_of_expr expr
 
-and string_of_expr = function
+(* Convert expr to string for inspection *)
+and string_of_expr : expr -> string = function
   | StrLit x -> "\"" ^ String.escaped x ^ "\""
   | IntLit x -> string_of_int x
   | CharLit x -> "'" ^ Char.escaped x ^ "'"
@@ -48,8 +54,8 @@ and string_of_expr = function
       ^ ")\n"
       ^ add_indent (String.concat "\n" (List.map string_of_stmt body))
       ^ ")"
-  | FunCall (caller, args) ->
-      "(" ^ string_of_expr caller ^ " "
+  | FunCall (func, args) ->
+      "(funcall " ^ string_of_expr func ^ " "
       ^ String.concat " " (List.map string_of_expr args)
       ^ ")"
   | If (predicate, then_clause, maybe_else_clause) ->
@@ -60,14 +66,10 @@ and string_of_expr = function
         | Some else_clause -> add_indent (string_of_expr else_clause)
         | None -> "" )
       ^ ")"
-  | Quote v -> "(quote " ^ string_of_expr v ^ ")"
-  | Cons (_, _) as cons -> "(" ^ string_of_cons cons ^ ")"
-  | Nil -> ""
+  | Symbol name -> "'" ^ name
+  | Cons (hd, tl) ->
+      "(cons " ^ string_of_expr hd ^ " " ^ string_of_expr tl ^ ")"
+  | Nil -> "nil"
 
-and string_of_cons = function
-  | Cons (a, (Cons (_, _) as b)) -> string_of_expr a ^ " " ^ string_of_cons b
-  | Cons (a, Nil) -> string_of_expr a
-  | Cons (a, b) -> string_of_expr a ^ " . " ^ string_of_expr b
-  | _ -> raise (Failure "Invalid argument of string_of_cons")
-
-let string_of_stmt_block = List.map string_of_stmt
+(* Convert list of stmt to list of string for inspection *)
+let string_of_stmt_block : stmt list -> string list = List.map string_of_stmt

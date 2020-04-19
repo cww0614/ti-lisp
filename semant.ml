@@ -3,9 +3,11 @@ module A = Ast
 
 type value_type = Function of value_type * int * int | Value | Void | Any
 
-let check =
-  let rec check_stmt_block (symbol_table : 'a) :
-      A.expr -> 'a * value_type * stmt list = function
+type symbol_table = value_type Symtable.symbol_table
+
+let check : A.expr list -> stmt list =
+  let rec check_stmt_block (symbol_table : symbol_table) :
+      A.expr -> symbol_table * value_type * stmt list = function
     | A.Nil -> (symbol_table, Void, [])
     | A.Cons (hd, Nil) ->
         let symbol_table, stmt_type, stmt = check_stmt symbol_table hd in
@@ -24,14 +26,14 @@ let check =
         expr :: check_expr_list symbol_table tl
     | _ -> raise (Failure "Invalid expression list")
   and check_expr symbol_table : A.expr -> value_type * expr =
-    let rec map_quotted = function
+    let rec quote_expr : A.expr -> expr = function
       | A.CharLit c -> CharLit c
       | A.StrLit c -> StrLit c
       | A.IntLit c -> IntLit c
       | A.Nil -> Nil
-      | A.Id name -> Id name
-      | A.Cons (hd, tl) -> Cons (map_quotted hd, map_quotted tl)
-      | A.Quote expr -> Quote (map_quotted expr)
+      | A.Id name -> Symbol name
+      | A.Cons (hd, tl) -> Cons (quote_expr hd, quote_expr tl)
+      | A.Quote expr -> Cons (Id "quote", quote_expr expr)
       | A.Expansion -> raise (Failure "Invalid expansion dots")
     in
 
@@ -39,7 +41,7 @@ let check =
     | A.Id name ->
         if Symtable.mem name symbol_table then (Value, Id name)
         else raise (Failure ("Undefined variable " ^ name))
-    | A.Quote expr -> (Value, Quote (map_quotted expr))
+    | A.Quote expr -> (Value, quote_expr expr)
     | A.Expansion -> raise (Failure "Invalid expansion dots")
     | A.Cons (expr, args) -> (
         match expr with
@@ -162,9 +164,9 @@ let check =
             | _ -> raise (Failure "Calling to a non-function") )
         | _ as v -> raise (Failure ("Invalid function: " ^ A.string_of_ast v)) )
     (* literals are self quotted *)
-    | expr -> (Value, map_quotted expr)
-  and check_stmt (symbol_table : 'a) : A.expr -> 'a * value_type * stmt =
-    function
+    | expr -> (Value, quote_expr expr)
+  and check_stmt (symbol_table : symbol_table) :
+      A.expr -> symbol_table * value_type * stmt = function
     | A.Cons (A.Id "define", Cons (Id name, Cons (value, Nil))) ->
         let temp_symbol_table = Symtable.add name Any symbol_table in
         let value_type, _ = check_expr temp_symbol_table value in
