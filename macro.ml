@@ -5,8 +5,10 @@ type macro_rule = { pattern : expr; body : expr }
 
 type macro_def = { literals : string list; rules : macro_rule list }
 
-let analyze_syntax_rules =
-  let analyze_rule = function
+type symbol_table = macro_def Symtable.symbol_table
+
+let analyze_syntax_rules : expr -> macro_def =
+  let analyze_rule : expr -> macro_rule = function
     | Cons (pattern, Cons (body, Nil)) -> { pattern; body }
     | _ -> raise (Failure "Invalid syntax-rules pattern")
   in
@@ -23,7 +25,7 @@ let analyze_syntax_rules =
       }
   | _ -> raise (Failure "Invalid syntax-rules")
 
-let builtin_macros =
+let builtin_macros : symbol_table =
   Symtable.from
     (List.map
        (function
@@ -57,7 +59,7 @@ let builtin_macros =
                 ((_) true)
                 ((_ test) test)
                 ((_ test1 test2 ...)
-            (if test1 (and test2 ...) false))) |}
+                 (if test1 (and test2 ...) false))) |}
          );
          ( "or",
            {| (syntax-rules ()
@@ -78,7 +80,7 @@ let builtin_macros =
          );
        ])
 
-let expand symbol_table expr =
+let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
   (* This is the expanding "atom" function. For an input expression:
 
      If it is a macro definition, return the updated symbol table and
@@ -89,8 +91,10 @@ let expand symbol_table expr =
      symbol table and expanded expression.
 
      Otherwise, it return the symbol table and the input unchanged *)
-  let rec expand1 symbol_table =
-    let rec match_rule map literals pattern expr =
+  let rec expand1 (symbol_table : symbol_table) :
+      expr -> symbol_table * expr option =
+    let rec match_rule (map : expr StringMap.t) (literals : string list)
+        (pattern : expr) (expr : expr) : expr StringMap.t option =
       match (pattern, expr) with
       | Id id1, Id id2 when List.mem id2 literals ->
           if id1 = id2 then Some map else None
@@ -106,7 +110,7 @@ let expand symbol_table expr =
       | _ -> None
     in
 
-    let rec replace_rule map = function
+    let rec replace_rule (map : expr StringMap.t) : expr -> expr = function
       | Id id as v -> if StringMap.mem id map then StringMap.find id map else v
       | Cons (Id id, Cons (Expansion, Nil)) ->
           if StringMap.mem id map then StringMap.find id map
@@ -116,7 +120,7 @@ let expand symbol_table expr =
       | v -> v
     in
 
-    let rec find_first f = function
+    let rec find_first (f : 'a -> 'b option) : 'a list -> 'b option = function
       | [] -> None
       | hd :: tl -> (
           match f hd with Some v as s -> s | None -> find_first f tl )
@@ -147,7 +151,8 @@ let expand symbol_table expr =
 
   (* apply expand1 to every element recursively in a Cons-list, and
      update the symbol table in the process *)
-  let rec expand_over_list symbol_table expr =
+  let rec expand_over_list (symbol_table : symbol_table) (expr : expr) :
+      symbol_table * expr =
     let rec expand_over_list_iter symbol_table = function
       (* New level of list *)
       | Cons (Cons (head, tail), tail2) ->
@@ -181,7 +186,7 @@ let expand symbol_table expr =
   expand_over_list symbol_table expr
 
 (* Apply expand to a list of expression sequentially *)
-let expand_all exprs =
+let expand_all (exprs : expr list) : expr list =
   let rec expand_all_iter symbol_table = function
     | [] -> []
     | hd :: tl ->
