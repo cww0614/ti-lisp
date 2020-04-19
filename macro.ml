@@ -91,25 +91,35 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
      symbol table and expanded expression.
 
      Otherwise, it return the symbol table and the input unchanged *)
-  let rec expand1 (symbol_table : symbol_table) :
-      expr -> symbol_table * expr option =
-    let rec match_rule (map : expr StringMap.t) (literals : string list)
-        (pattern : expr) (expr : expr) : expr StringMap.t option =
-      match (pattern, expr) with
-      | Id id1, Id id2 when List.mem id2 literals ->
-          if id1 = id2 then Some map else None
-      | Id "_", _ -> Some map
-      | Id id, v -> Some (StringMap.add id v map)
-      | Cons (Id id, Cons (Expansion, Nil)), (Cons (hd2, tl2) as rest_form) ->
-          Some (StringMap.add id rest_form map)
-      | Cons (hd1, tl1), Cons (hd2, tl2) -> (
-          match match_rule map literals hd1 hd2 with
-          | Some map -> match_rule map literals tl1 tl2
-          | None -> None )
-      | Nil, Nil -> Some map
-      | _ -> None
+  let expand1 (symbol_table : symbol_table) : expr -> symbol_table * expr option
+      =
+      (* check if the expression expr matches the pattern (given a
+         list of literals). If it matches, returns a map that stores
+         the matched expression for each identifier in the
+         pattern. Otherwise, it returns None. *)
+    let match_rule (literals : string list) (pattern : expr) (expr : expr) :
+        expr StringMap.t option =
+      let rec match_rule_iter (map : expr StringMap.t) (literals : string list)
+          (pattern : expr) (expr : expr) : expr StringMap.t option =
+        match (pattern, expr) with
+        | Id id1, Id id2 when List.mem id2 literals ->
+            if id1 = id2 then Some map else None
+        | Id "_", _ -> Some map
+        | Id id, v -> Some (StringMap.add id v map)
+        | Cons (Id id, Cons (Expansion, Nil)), (Cons (hd2, tl2) as rest_form) ->
+            Some (StringMap.add id rest_form map)
+        | Cons (hd1, tl1), Cons (hd2, tl2) -> (
+            match match_rule_iter map literals hd1 hd2 with
+            | Some map -> match_rule_iter map literals tl1 tl2
+            | None -> None )
+        | Nil, Nil -> Some map
+        | _ -> None
+      in
+
+      match_rule_iter StringMap.empty literals pattern expr
     in
 
+    (* Do expansion according to the identifier-expression map *)
     let rec replace_rule (map : expr StringMap.t) : expr -> expr = function
       | Id id as v -> if StringMap.mem id map then StringMap.find id map else v
       | Cons (Id id, Cons (Expansion, Nil)) ->
@@ -135,9 +145,7 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
             match
               find_first
                 (fun rule ->
-                  match
-                    match_rule StringMap.empty literals rule.pattern cons
-                  with
+                  match match_rule literals rule.pattern cons with
                   | Some map -> Some (rule, map)
                   | None -> None)
                 rules

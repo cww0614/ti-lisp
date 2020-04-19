@@ -116,3 +116,54 @@ Example of expanding this macro:
            (begin b)
            (begin -1)))
 ```
+
+# Implementation
+
+The function that does the most basic macro expansion is `expand1`. It
+accepts a symbol table and an lisp expression, then:
+
+- If the expression is a `define-syntax` form (macro definition), it
+  add the macro definition to the symbol table, return the updated
+  symbol and `None`. The `None` here indicates that the
+  `define-syntax` form is stripped from AST.
+- If the expression that matches any macro in the symbol table
+  (`match_rule` function), it will do expansion (`replace_rule`
+  function) and return the expanded expression (with unchanged symbol
+  table).
+- Otherwise, it returns the symbol table and expression unchanged.
+
+Now that we have `expand1`, we can deal with macro definitions and
+expand expression like `(and 1 2)` non-recursively.  However, normally
+macro forms are contained within other expressions like `(set! a (and
+1 2))` or `(let ((a true) (b false)) (and 1 2))`. We need a way to
+find macro forms in this nested structure and do recursive
+expansion. This is why we have the `expand_over_list` helper function.
+
+`expand_over_list` first tries to expand the expression itself, in
+case it is given a macro form directly. Then it tries to expand each
+element in the expanded list (assume we are dealing with a list here,
+for other cases, `expand_over_list` can simply return the expression
+unchanged) (note that we are expanding elements in a expanded list,
+this is where recursive expansion is enabled). If an element of the
+list is of form `Cons [Cons something, ...]`, it means that we find a
+nested list (for example, the `(and 1 2)` in `(set! a (and 1 2))`),
+and we apply `expand_over_list` recursively to this inner list. This
+allows us to find macro forms in a nested list recursively.
+
+Finally, since `expand` (a simple rename of `expand_over_list`) only
+works with one `expr` while our program is represented by `expr list`,
+we create a simple wrapper `expand_all`, which applies `expand`
+sequentially to the list of `expr` and return the expanded list of
+expressions. The initial symbol table in `expand_all` is made with the
+builtin macros.
+
+# Builtin Macros
+
+For now, builtin macros include:
+
+- `cond`: the `cond` structure, expanded into nested `if`
+- `let*`: the `let*` structure, expanded into nested `let`
+- `and`, `or`: implemented by macros instead of normal functions to
+  support short-circuit evaluation.
+- `define`: extend the basic `define` (`(define name value)`) to
+  support function declaration.
