@@ -80,3 +80,45 @@ Types are not store into the SAST, however, because I suppose we won't
 need them in IR generating. We will have to insert dynamic type
 checking code when generating IR no matter what type we could infer
 for the expression in semantic analysis.
+
+# Examples
+
+## Hello World
+
+```scheme
+(define (hello-world) "Hello World!")
+(hello-world) 
+```
+
+will be parsed into SAST
+
+```scheme
+(define hello-world (lambda ()
+  "Hello World!"))
+
+(funcall hello-world)
+```
+
+## Fib
+
+```scheme
+(define (fib n)
+  (cond
+   ((= n 0) 0)
+   ((= n 1) 1)
+   (else (+ (fib (- n 1)) (fib (- n 2))))))
+```
+
+will be parsed into SAST
+
+```scheme
+(define fib (lambda (n)
+  (if (funcall = n 0)
+    (begin
+      0)
+    (if (funcall = n 1)
+      (begin
+        1)
+      (begin
+        (funcall + (funcall fib (funcall - n 1)) (funcall fib (funcall - n 2))))))))
+```
