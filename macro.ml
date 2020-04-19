@@ -52,6 +52,10 @@ let builtin_macros : symbol_table =
                 ((_ (name args ...) body ...)
                  (define name
                    (lambda (args ...)
+                     body ...)))
+                ((_ (name) body ...)
+                 (define name
+                   (lambda ()
                      body ...)))) |}
          );
          ( "and",
@@ -108,8 +112,6 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
         | Id id, v -> Some (StringMap.add id v map)
         | Cons (Id id, Cons (Expansion, Nil)), (Cons (hd2, tl2) as rest_form) ->
             Some (StringMap.add id rest_form map)
-        | Cons (Id id, Cons (Expansion, Nil)), Nil ->
-            Some (StringMap.add id Nil map)
         | Cons (hd1, tl1), Cons (hd2, tl2) -> (
             match match_rule_iter map literals hd1 hd2 with
             | Some map -> match_rule_iter map literals tl1 tl2
