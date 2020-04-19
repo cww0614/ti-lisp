@@ -93,10 +93,10 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
      Otherwise, it return the symbol table and the input unchanged *)
   let expand1 (symbol_table : symbol_table) : expr -> symbol_table * expr option
       =
-      (* check if the expression expr matches the pattern (given a
-         list of literals). If it matches, returns a map that stores
-         the matched expression for each identifier in the
-         pattern. Otherwise, it returns None. *)
+    (* check if the expression expr matches the pattern (given a
+       list of literals). If it matches, returns a map that stores
+       the matched expression for each identifier in the
+       pattern. Otherwise, it returns None. *)
     let match_rule (literals : string list) (pattern : expr) (expr : expr) :
         expr StringMap.t option =
       let rec match_rule_iter (map : expr StringMap.t) (literals : string list)
@@ -108,6 +108,8 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
         | Id id, v -> Some (StringMap.add id v map)
         | Cons (Id id, Cons (Expansion, Nil)), (Cons (hd2, tl2) as rest_form) ->
             Some (StringMap.add id rest_form map)
+        | Cons (Id id, Cons (Expansion, Nil)), Nil ->
+            Some (StringMap.add id Nil map)
         | Cons (hd1, tl1), Cons (hd2, tl2) -> (
             match match_rule_iter map literals hd1 hd2 with
             | Some map -> match_rule_iter map literals tl1 tl2
