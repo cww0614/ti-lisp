@@ -95,8 +95,8 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
      symbol table and expanded expression.
 
      Otherwise, it return the symbol table and the input unchanged *)
-  let expand1 (symbol_table : symbol_table) : expr -> symbol_table * expr option
-      =
+  let rec expand1 (symbol_table : symbol_table) :
+      expr -> symbol_table * expr option =
     (* check if the expression expr matches the pattern (given a
        list of literals). If it matches, returns a map that stores
        the matched expression for each identifier in the
@@ -109,7 +109,8 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
         | Id id1, Id id2 when List.mem id2 literals ->
             if id1 = id2 then Some map else None
         | Id "_", _ -> Some map
-        | Id id, v -> Some (StringMap.add id v map)
+        | Id id, v when not (List.mem id literals) ->
+            Some (StringMap.add id v map)
         | Cons (Id id, Cons (Expansion, Nil)), (Cons (hd2, tl2) as rest_form) ->
             Some (StringMap.add id rest_form map)
         | Cons (hd1, tl1), Cons (hd2, tl2) -> (
@@ -126,11 +127,9 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
     (* Do expansion according to the identifier-expression map *)
     let rec replace_rule (map : expr StringMap.t) : expr -> expr = function
       | Id id as v -> if StringMap.mem id map then StringMap.find id map else v
-      | Cons (Id id, Cons (Expansion, Nil)) ->
-          if StringMap.mem id map then StringMap.find id map
-          else raise (Failure "Illegal expasion dots ...")
+      | Cons (Id id, Cons (Expansion, rest)) when StringMap.mem id map ->
+          cons_concat (StringMap.find id map) (replace_rule map rest)
       | Cons (hd, tl) -> Cons (replace_rule map hd, replace_rule map tl)
-      | Expansion -> Nil
       | v -> v
     in
 
@@ -155,7 +154,8 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
                 rules
             with
             | Some (rule, map) ->
-                (symbol_table, Some (replace_rule map rule.body))
+                (* recursively expansion *)
+                expand1 symbol_table (replace_rule map rule.body)
             | None -> (symbol_table, Some cons) )
         | None -> (symbol_table, Some (Cons (Id id, expr))) )
     | v -> (symbol_table, Some v)
