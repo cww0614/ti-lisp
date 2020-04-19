@@ -5,13 +5,21 @@ and expr =
   | StrLit of string
   | IntLit of int
   | Id of string
+  (* lists/cons: '(1 2 3 ...) *)
   | Cons of expr * expr
+  (* '() *)
   | Nil
+  (* 'symbol-name *)
   | Symbol of string
+  (* (begin stmt1 stmt2 ...) *)
   | Begin of stmt list
+  (* (lambda (arg1 arg2 ...) stmt1 ...) *)
   | Lambda of string list * stmt list
+  (* (let ((name value)) body ...)  *)
   | Let of (string * expr) list * stmt list
+  (* (if test then else), the else is optional here *)
   | If of expr * expr * expr option
+  (* (fun arg1 arg2 ...) *)
   | FunCall of expr * expr list
 
 type program = stmt list

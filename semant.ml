@@ -1,11 +1,23 @@
 open Sast
 module A = Ast
 
-type value_type = Function of value_type * int * int | Value | Void | Any
+type value_type =
+  (* return type, min number of args, max number of args *)
+  | Function of value_type * int * int
+  | Value
+  | Void
+  | Any
 
 type symbol_table = value_type Symtable.symbol_table
 
 let check : A.expr list -> stmt list =
+  let is_function (name : string) (symbol_table : symbol_table) : bool =
+    match Symtable.find name symbol_table with
+    | Some (Function (_, _, _)) -> true
+    | Some Any -> true
+    | _ -> false
+  in
+
   let rec check_stmt_block (symbol_table : symbol_table) :
       A.expr -> symbol_table * value_type * stmt list = function
     | A.Nil -> (symbol_table, Void, [])
@@ -19,20 +31,25 @@ let check : A.expr list -> stmt list =
         in
         (symbol_table, value_type, stmt :: new_tail)
     | _ -> raise (Failure "Invalid statement block")
-  and check_expr_list symbol_table : A.expr -> expr list = function
+  and check_expr_list (symbol_table : symbol_table) : A.expr -> expr list =
+    function
     | Nil -> []
     | Cons (hd, tl) ->
         let _, expr = check_expr symbol_table hd in
         expr :: check_expr_list symbol_table tl
     | _ -> raise (Failure "Invalid expression list")
-  and check_expr symbol_table : A.expr -> value_type * expr =
+  and check_expr (symbol_table : symbol_table) : A.expr -> value_type * expr =
+    (* determine the semantic meaning of quote (could be symbol,
+       lists, cons) *)
     let rec quote_expr : A.expr -> expr = function
+      (* literals are said to be self-quoted *)
       | A.CharLit c -> CharLit c
       | A.StrLit c -> StrLit c
       | A.IntLit c -> IntLit c
       | A.Nil -> Nil
       | A.Id name -> Symbol name
       | A.Cons (hd, tl) -> Cons (quote_expr hd, quote_expr tl)
+      (* nested quote is converted to '(quote something) *)
       | A.Quote expr -> Cons (Id "quote", quote_expr expr)
       | A.Expansion -> raise (Failure "Invalid expansion dots")
     in
@@ -43,9 +60,10 @@ let check : A.expr list -> stmt list =
         else raise (Failure ("Undefined variable " ^ name))
     | A.Quote expr -> (Value, quote_expr expr)
     | A.Expansion -> raise (Failure "Invalid expansion dots")
+    (* Function call like expression *)
     | A.Cons (expr, args) -> (
         match expr with
-        | A.Id id when Symtable.mem id symbol_table -> (
+        | A.Id id when is_function id symbol_table -> (
             match Option.get (Symtable.find id symbol_table) with
             | Function (ret, min, max) ->
                 let args = check_expr_list symbol_table args in
@@ -86,6 +104,7 @@ let check : A.expr list -> stmt list =
                 | _ -> raise (Failure "Invalid else caluse") )
             | _ -> raise (Failure "Invalid if expression") )
         | A.Id "let" -> (
+            (* check if the bindings in the let are well formed *)
             let rec check_let_bindings = function
               | A.Nil -> []
               | A.Cons (Cons (Id name, Cons (value, Nil)), rest) ->
@@ -121,6 +140,7 @@ let check : A.expr list -> stmt list =
             in
             (stmt_type, Begin stmts)
         | A.Id "lambda" -> (
+            (* check if the arguments of a lambda are well formed *)
             let rec check_lambda_bindings = function
               | A.Nil -> []
               | A.Cons (A.Id name, rest) -> name :: check_lambda_bindings rest
@@ -167,7 +187,12 @@ let check : A.expr list -> stmt list =
     | expr -> (Value, quote_expr expr)
   and check_stmt (symbol_table : symbol_table) :
       A.expr -> symbol_table * value_type * stmt = function
+    (* functions have higher precedence than set! and define *)
+    | A.Cons (A.Id id, _) as expr when is_function id symbol_table ->
+        let expr_type, expr = check_expr symbol_table expr in
+        (symbol_table, expr_type, Expr expr)
     | A.Cons (A.Id "define", Cons (Id name, Cons (value, Nil))) ->
+        (* support for recursive function *)
         let temp_symbol_table = Symtable.add name Any symbol_table in
         let value_type, _ = check_expr temp_symbol_table value in
         let new_symbol_table = Symtable.add name value_type symbol_table in
@@ -181,6 +206,7 @@ let check : A.expr list -> stmt list =
           (new_symbol_table, Void, Set (name, value))
         else raise (Failure ("Variable " ^ name ^ " is undefined"))
     | A.Cons (A.Id "set!", _) -> raise (Failure "Invalid set! statement")
+    (* fallback to expr *)
     | expr ->
         let expr_type, expr = check_expr symbol_table expr in
         (symbol_table, expr_type, Expr expr)
