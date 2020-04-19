@@ -8,7 +8,8 @@ type expr =
   | Expansion
   | Nil
 
-let rec string_of_ast = function
+(* Convert an AST to string for inspection *)
+let rec string_of_ast : expr -> string = function
   | StrLit x -> "\"" ^ String.escaped x ^ "\""
   | IntLit x -> string_of_int x
   | CharLit x -> "'" ^ Char.escaped x ^ "'"
@@ -18,7 +19,10 @@ let rec string_of_ast = function
   | Expansion -> "..."
   | Nil -> "Nil"
 
-let rec cons_to_list = function
+(* Transform a list represented by Cons and Nil into an OCaml list, so
+   that we can make use of list related functions like `map` in
+   OCaml. *)
+let rec cons_to_list : expr -> expr list = function
   | Cons (a, b) -> a :: cons_to_list b
   | Nil -> []
   | _ -> raise (Failure "cons_to_list called on non-list")
