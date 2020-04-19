@@ -63,8 +63,8 @@ and string_of_expr : expr -> string = function
       ^ add_indent (String.concat "\n" (List.map string_of_stmt body))
       ^ ")"
   | FunCall (func, args) ->
-      "(funcall " ^ string_of_expr func ^ " "
-      ^ String.concat " " (List.map string_of_expr args)
+      "(funcall " ^ string_of_expr func
+      ^ String.concat "" (List.map (fun e -> " " ^ string_of_expr e) args)
       ^ ")"
   | If (predicate, then_clause, maybe_else_clause) ->
       "(if " ^ string_of_expr predicate ^ "\n"
