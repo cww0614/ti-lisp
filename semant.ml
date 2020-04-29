@@ -192,12 +192,42 @@ let check : A.expr list -> stmt list =
         let expr_type, expr = check_expr symbol_table expr in
         (symbol_table, expr_type, Expr expr)
     | A.Cons (A.Id "define", Cons (Id name, Cons (value, Nil))) ->
+
+        (* Helper function: check nested inner defines only allowed at 
+        beginning of function. Peek last value on stack to check if last 
+        function is an `other_statement` before allowing next `define`. *)
+        let rec check_inner_define value stack =
+          match value with
+          (* first inner define *)
+            A.Cons (A.Id "lambda", Cons (Nil, Cons (Cons (A.Id "define", _), 
+            rest))) ->
+              let new_stack =  "define" :: stack in
+              check_inner_define rest new_stack
+          (* define *)
+          | A.Cons (Cons (A.Id "define", _), rest) ->
+              let hd = List.hd stack in
+              if hd = "other_stmt" then
+                raise (Failure ("Nested inner defines only allowed at "
+                                ^"beginning of function") )
+              else 
+              let new_stack = "define" :: stack in
+              check_inner_define rest new_stack
+          (* other statements *)
+          | A.Cons (_, rest) ->
+              let new_stack = "other_stmt" :: stack in
+              check_inner_define rest new_stack
+          | _ -> None
+        in
+        let _ = check_inner_define value [] in
+
         (* support for recursive function *)
         let temp_symbol_table = Symtable.add name Any symbol_table in
         let value_type, _ = check_expr temp_symbol_table value in
         let new_symbol_table = Symtable.add name value_type symbol_table in
         let value_type, value = check_expr new_symbol_table value in
         (new_symbol_table, Void, Define (name, value))
+
+
     | A.Cons (A.Id "define", _) -> raise (Failure "Invalid define statement")
     | A.Cons (A.Id "set!", Cons (Id name, Cons (value, Nil))) ->
         if Symtable.mem name symbol_table then

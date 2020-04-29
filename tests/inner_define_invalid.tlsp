@@ -1,0 +1,5 @@
+(define (hello) 
+  (define a 1)
+  (display a)
+  (define b 2)
+  (display b))
