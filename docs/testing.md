@@ -8,3 +8,9 @@ Fib example
 ```bash
 ./tilisp.native -a tests/fib.tlsp
 ```
+
+For Unit Testing, use `testing.ml`. This creates 2 files in /tests/ directory: the expected output `test.output`
+and generated output `test.gen`.
+```bash
+ocaml testing.ml
+```

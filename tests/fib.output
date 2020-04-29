@@ -1,0 +1,9 @@
+(define fib (lambda (n)
+  (if (funcall = n 0)
+    (begin
+      0)
+    (if (funcall = n 1)
+      (begin
+        1)
+      (begin
+        (funcall + (funcall fib (funcall - n 1)) (funcall fib (funcall - n 2))))))))
