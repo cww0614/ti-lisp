@@ -14,3 +14,6 @@ and generated output `test.gen`.
 ```bash
 ocaml testing.ml
 ```
+
+
+Cons [Cons [a, Cons [b, Cons [b, Nil]]], Cons [1, Nil]]

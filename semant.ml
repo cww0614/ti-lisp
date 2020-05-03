@@ -1,5 +1,6 @@
 open Sast
 module A = Ast
+module StringMap = Map.Make(String)
 
 type value_type =
   (* return type, min number of args, max number of args *)
@@ -140,16 +141,34 @@ let check : A.expr list -> stmt list =
             in
             (stmt_type, Begin stmts)
         | A.Id "lambda" -> (
+
             (* check if the arguments of a lambda are well formed *)
             let rec check_lambda_bindings = function
               | A.Nil -> []
               | A.Cons (A.Id name, rest) -> name :: check_lambda_bindings rest
               | _ -> raise (Failure "Invalid lambda argument list")
             in
+            
+            (* check for duplicates in lambda arguments *)
+            let rec check_lambda_duplicates bindings map =
+            match bindings with
+              | name :: rest -> 
+                if StringMap.exists (fun key _ -> if key = name then true else false) map 
+                then raise (Failure ("Duplications in lambda argument list"))
+                else let new_map = StringMap.add name name map in
+                check_lambda_duplicates rest new_map
+              | _ -> None
+            in
 
             match args with
             | Cons (arg_list, body) ->
+                (* check arguments well formed *)
                 let bindings = check_lambda_bindings arg_list in
+
+                (* check for duplicates *)
+                let map = StringMap.empty in
+                let _ = check_lambda_duplicates bindings map in
+
                 let new_symbol_table =
                   List.fold_left
                     (fun symbol_table name ->
