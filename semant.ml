@@ -114,9 +114,27 @@ let check : A.expr list -> stmt list =
               | _ -> raise (Failure "Invalid let binding list")
             in
 
+            (* check for duplicates in let bindings *)
+            let rec check_let_duplicates bindings map =
+              match bindings with
+                | (name, _, _) :: rest ->
+                  if StringMap.exists (fun key _ -> if key = name 
+                                                    then true 
+                                                    else false) map 
+                  then raise (Failure ("Duplications in let binding list"))
+                  else let new_map = StringMap.add name name map in
+                  check_let_duplicates rest new_map
+                | _ -> None
+              in
+
             match args with
             | A.Cons (bindings, body) ->
                 let bindings = check_let_bindings bindings in
+
+                (* check for let duplicates *)
+                let map = StringMap.empty in
+                let _ = check_let_duplicates bindings map in
+
                 let new_symbol_table =
                   List.fold_left
                     (fun symbol_table binding ->
@@ -153,7 +171,9 @@ let check : A.expr list -> stmt list =
             let rec check_lambda_duplicates bindings map =
             match bindings with
               | name :: rest -> 
-                if StringMap.exists (fun key _ -> if key = name then true else false) map 
+                if StringMap.exists (fun key _ -> if key = name 
+                                                  then true 
+                                                  else false) map 
                 then raise (Failure ("Duplications in lambda argument list"))
                 else let new_map = StringMap.add name name map in
                 check_lambda_duplicates rest new_map
@@ -162,10 +182,9 @@ let check : A.expr list -> stmt list =
 
             match args with
             | Cons (arg_list, body) ->
-                (* check arguments well formed *)
-                let bindings = check_lambda_bindings arg_list in
+                 let bindings = check_lambda_bindings arg_list in
 
-                (* check for duplicates *)
+                (* check for lambda duplicates *)
                 let map = StringMap.empty in
                 let _ = check_lambda_duplicates bindings map in
 
