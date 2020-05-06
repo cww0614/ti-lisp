@@ -1,0 +1,4 @@
+(define-syntax when
+  (syntax-rules ()
+    ((_ pred b1 ...)
+     (if pred (begin b1 ...)))))

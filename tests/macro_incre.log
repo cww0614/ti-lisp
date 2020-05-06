@@ -1,0 +1,7 @@
+nil
+
+(define a 1)
+
+(begin
+  (set! a (funcall + a 2))
+  a)

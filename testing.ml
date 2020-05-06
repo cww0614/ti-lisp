@@ -10,6 +10,16 @@ let ls_testcases = [
 
   ("Test case: undefined variable", "semant_undefined_variable", "-s");
 
+  ("Test case: simple list", "parser_simple_list", "-a");
+
+  ("Test case: parse expansion in macro", "parser_macro_expansion", "-a");
+
+  ("Test case: macro definition", "macro_set_nil", "-s");
+
+  ("Test case: macro multiple rules", "macro_incre", "-s");
+
+  ("Test case: macro with reserved keywords", "macro_reserved_keywords", "-s");
+
   (* Test SAST for fib. *)
   ("Test case: (fib.tisp, SAST)" , "fib", "-s");
   
@@ -44,7 +54,7 @@ let compare_list a b =
 let single_test (testcase : (string * string * string)) = 
   let (title, test_name, test_arg) = testcase in
   let cmd_run = "./tilisp.native "^test_arg^" tests/"^test_name^".tisp" in
-  let file_expected = "tests/"^test_name^".output" in
+  let file_expected = "tests/"^test_name^".log" in
   let (output, inp, errors) = Unix.open_process_full cmd_run [| |] in
   let ls_stdout = read_lines output in
   let ls_errors = read_lines errors in

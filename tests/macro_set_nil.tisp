@@ -1,0 +1,6 @@
+(define-syntax nil!
+  (syntax-rules ()
+    ((_ x)
+     (set! x '()))))
+(define a 1)
+(nil! a)
