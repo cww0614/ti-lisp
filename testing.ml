@@ -16,6 +16,10 @@ let ls_testcases = [
 
   ("Test case: macro definition", "macro_set_nil", "-s");
 
+  ("Test case: macro multiple rules", "macro_incre", "-s");
+
+  ("Test case: macro with reserved keywords", "macro_reserved_keywords", "-s");
+
   (* Test SAST for fib. *)
   ("Test case: (fib.tisp, SAST)" , "fib", "-s");
   

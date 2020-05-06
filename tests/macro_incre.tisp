@@ -1,0 +1,8 @@
+(define-syntax incf
+  (syntax-rules ()
+    ((_ x) (begin (set! x (+ x 1)) x))
+    ((_ x i) (begin (set! x (+ x i)) x))))
+
+(define a 1)
+
+(incf a 2)

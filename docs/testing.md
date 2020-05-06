@@ -17,3 +17,19 @@ For Unit Testing, use `testing.ml`.
 4. Run `./testing.native`.
 
 Cons [Cons [a, Cons [b, Cons [b, Nil]]], Cons [1, Nil]]
+
+## Modules to test
+
+### Parsing
+
+- [x] bracket pairing
+- [x] expansion in macro
+
+### Macro
+
+- [x] macro expansion example
+- [x] reserved keywords
+
+### Semantic analysis
+
+- [x] undefined vairable
