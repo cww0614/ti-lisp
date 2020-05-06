@@ -2,6 +2,14 @@
 
 (* List of tuple (testcase description, testname, arguments for tilisp) *)
 let ls_testcases = [
+  ("Test case: unpaired bracket", "parser_unpaired_bracket", "-a");
+
+  ("Test case: incomplete string", "parser_invalid_string", "-a");
+
+  ("Test case: parsing quote", "parser_quote", "-a");
+
+  ("Test case: undefined variable", "semant_undefined_variable", "-s");
+
   (* Test SAST for fib. *)
   ("Test case: (fib.tisp, SAST)" , "fib", "-s");
   
@@ -21,7 +29,6 @@ let ls_testcases = [
   (* Duplcated parameters in lambda expression *)
   ("Test case: Duplcated parameters in lambda expression", "lambda_duplications", "-s");
 
-  ("Test case: unpaired bracket", "parser_unpaired_bracket", "-a")
 ] in
 
 let read_lines ic : string list =
