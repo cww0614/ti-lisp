@@ -1,13 +1,27 @@
+(* Building this with "ocamlbuild -lib unix testing.native" *)
+
 (* List of tuple (testcase description, testname, arguments for tilisp) *)
 let ls_testcases = [
   (* Test SAST for fib. *)
-  ("Test case: (fib.tslp, SAST)" , "fib", "-s");
+  ("Test case: (fib.tisp, SAST)" , "fib", "-s");
   
   (* Test for nested inner defines *)
-  ("Test case: (inner_define_valid.tsl p, SAST)", "inner_define_valid", "-s");
+  ("Test case: (inner_define_valid.tisp, SAST)", "inner_define_valid", "-s");
 
   (* Test for nested inner defines *)
-  ("Test case: (inner_define_invalid.tslp, SAST)", "inner_define_invalid", "-s")
+  ("Test case: (inner_define_invalid.tisp, SAST)", "inner_define_invalid", "-s");
+
+  (* Duplicate names in a let bindings:
+  unlike Scheme, an error would be thrown out. *)
+  ("Test case: (duplicate names in one let binding)", "let_duplications", "-s");
+
+  (* Multi-level nested 'define' *)
+  ("Test case: Multi-level nested 'define' ", "inner_define_multilevel", "-s");
+
+  (* Duplcated parameters in lambda expression *)
+  ("Test case: Duplcated parameters in lambda expression", "lambda_duplications", "-s");
+
+  ("Test case: unpaired bracket", "parser_unpaired_bracket", "-a")
 ] in
 
 let read_lines ic : string list =
@@ -32,7 +46,7 @@ let single_test (testcase : (string * string * string)) =
   let ls_expected = read_lines ic_expected in
   let _ = Unix.close_process_full (output, inp, errors) in
   if (compare_list ls_actual ls_expected) then
-  print_endline (title^" passed.") else (print_endline (title^" failed.");
+  print_endline (title^" [passed].") else (print_endline (title^" [failed].");
   print_string "Expeceted:\n"; List.iter print_endline ls_expected;
   print_string "Actual:\n"; List.iter print_endline ls_actual) in
 
