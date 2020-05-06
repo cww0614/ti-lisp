@@ -2,6 +2,8 @@
 
 (* List of tuple (testcase description, testname, arguments for tilisp) *)
 let ls_testcases = [
+  ("Test case: comments & identifier", "scanner_comments_id", "-a");
+
   ("Test case: unpaired bracket", "parser_unpaired_bracket", "-a");
 
   ("Test case: incomplete string", "parser_invalid_string", "-a");

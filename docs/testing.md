@@ -20,10 +20,12 @@ Cons [Cons [a, Cons [b, Cons [b, Nil]]], Cons [1, Nil]]
 
 ## Modules to test
 
-### Parsing
+### Scanning & Parsing
 
 - [x] bracket pairing
 - [x] expansion in macro
+- [x] comments
+- [x] invalid identifier
 
 ### Macro
 
