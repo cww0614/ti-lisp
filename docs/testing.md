@@ -11,7 +11,7 @@ Fib example
 
 For Unit Testing, use `testing.ml`. 
 
-1. Add the `testname.output` file and `testname.tisp` source codes to `tests` directory.
+1. Add two files: `testname.log` (expected output) and `testname.tisp` (source codes) to `tests` directory.
 2. Add the description tuple to `testing.ml`.
 3. Run `ocamlbuild -lib unix testing.native`.
 4. Run `./testing.native`.
