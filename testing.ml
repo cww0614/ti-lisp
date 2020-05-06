@@ -48,14 +48,15 @@ let read_lines ic : string list =
     | Some s -> loop (s :: acc)
     | None -> close_in ic; List.rev acc in
   loop [] in
+
 let rec compare_list (a: string list) (b: string list) : bool =
   match (a, b) with
     ([], []) -> true
-  | (""::t1, ls2) -> compare_list t1 ls2
-  | (ls1, ""::t2) -> compare_list ls1 t2
-  | (h1::t1, h2::t2) -> if String.trim h1 = String.trim h2 then compare_list t1 t2 else false
-  | _ -> false
-in 
+  | (h1::t1, ls2) when (String.trim h1) = "" -> compare_list t1 ls2
+  | (ls1, h2::t2) when (String.trim h2) = "" -> compare_list ls1 t2
+  | (h1::t1, h2::t2) when (String.trim h1) = (String.trim h2) -> compare_list t1 t2
+  | _ -> false in
+
 let single_test (testcase : (string * string * string)) = 
   let (title, test_name, test_arg) = testcase in
   let cmd_run = "./tilisp.native "^test_arg^" tests/"^test_name^".tisp" in
