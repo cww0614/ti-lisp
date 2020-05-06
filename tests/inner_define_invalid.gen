@@ -1,1 +1,0 @@
-Fatal error: exception Failure("Nested inner defines only allowed at beginning of function")

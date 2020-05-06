@@ -22,7 +22,7 @@ let check : A.expr list -> stmt list =
   let rec check_stmt_block (symbol_table : symbol_table) :
       A.expr -> symbol_table * value_type * stmt list = function
     | A.Nil -> (symbol_table, Void, [])
-    | A.Cons (hd, Nil) ->
+    | A.Cons (hd, A.Nil) ->
         let symbol_table, stmt_type, stmt = check_stmt symbol_table hd in
         (symbol_table, stmt_type, [ stmt ])
     | A.Cons (hd, tl) ->
@@ -34,8 +34,8 @@ let check : A.expr list -> stmt list =
     | _ -> raise (Failure "Invalid statement block")
   and check_expr_list (symbol_table : symbol_table) : A.expr -> expr list =
     function
-    | Nil -> []
-    | Cons (hd, tl) ->
+    | A.Nil -> []
+    | A.Cons (hd, tl) ->
         let _, expr = check_expr symbol_table hd in
         expr :: check_expr_list symbol_table tl
     | _ -> raise (Failure "Invalid expression list")
@@ -65,8 +65,8 @@ let check : A.expr list -> stmt list =
     | A.Cons (expr, args) -> (
         match expr with
         | A.Id id when is_function id symbol_table -> (
-            match Option.get (Symtable.find id symbol_table) with
-            | Function (ret, min, max) ->
+            match (Symtable.find id symbol_table) with
+            | Some Function (ret, min, max) ->
                 let args = check_expr_list symbol_table args in
                 let arg_len = List.length args in
                 if min <= arg_len && arg_len <= max then
@@ -77,11 +77,11 @@ let check : A.expr list -> stmt list =
                        ( "Function " ^ id ^ " takes " ^ string_of_int min
                        ^ " to " ^ string_of_int max ^ " arguments, instead of "
                        ^ string_of_int arg_len ))
-            | Any -> (Any, FunCall (Id id, check_expr_list symbol_table args))
+            | Some Any -> (Any, FunCall (Id id, check_expr_list symbol_table args))
             | _ -> raise (Failure (id ^ " is not a function")) )
         | A.Id "if" -> (
             match args with
-            | Cons (predicate, Cons (then_clause, maybeElse)) -> (
+            | A.Cons (predicate, A.Cons (then_clause, maybeElse)) -> (
                 let predicate_type, predicate =
                   check_expr symbol_table predicate
                 in
@@ -90,7 +90,7 @@ let check : A.expr list -> stmt list =
                 in
 
                 match maybeElse with
-                | Cons (else_clause, Nil) ->
+                | A.Cons (else_clause, A.Nil) ->
                     let else_type, else_clause =
                       check_expr symbol_table else_clause
                     in
@@ -101,14 +101,14 @@ let check : A.expr list -> stmt list =
                       | Value, Value -> Value
                       | _ -> Any ),
                       If (predicate, then_clause, Some else_clause) )
-                | Nil -> (then_type, If (predicate, then_clause, None))
+                | A.Nil -> (then_type, If (predicate, then_clause, None))
                 | _ -> raise (Failure "Invalid else caluse") )
             | _ -> raise (Failure "Invalid if expression") )
         | A.Id "let" -> (
             (* check if the bindings in the let are well formed *)
             let rec check_let_bindings = function
               | A.Nil -> []
-              | A.Cons (Cons (Id name, Cons (value, Nil)), rest) ->
+              | A.Cons (A.Cons (A.Id name, A.Cons (value, A.Nil)), rest) ->
                   let value_type, expr = check_expr symbol_table value in
                   (name, value_type, expr) :: check_let_bindings rest
               | _ -> raise (Failure "Invalid let binding list")
@@ -181,7 +181,7 @@ let check : A.expr list -> stmt list =
             in
 
             match args with
-            | Cons (arg_list, body) ->
+            | A.Cons (arg_list, body) ->
                  let bindings = check_lambda_bindings arg_list in
 
                 (* check for lambda duplicates *)
@@ -204,7 +204,7 @@ let check : A.expr list -> stmt list =
                   Lambda (bindings, stmts) )
             | _ -> raise (Failure "Invalid lambda") )
         | A.Id name -> raise (Failure ("Undefined function: " ^ name))
-        | Cons (_, _) as expr -> (
+        | A.Cons (_, _) as expr -> (
             let func_type, func = check_expr symbol_table expr in
             match func_type with
             | Function (ret, min, max) ->
@@ -229,7 +229,7 @@ let check : A.expr list -> stmt list =
     | A.Cons (A.Id id, _) as expr when is_function id symbol_table ->
         let expr_type, expr = check_expr symbol_table expr in
         (symbol_table, expr_type, Expr expr)
-    | A.Cons (A.Id "define", Cons (Id name, Cons (value, Nil))) ->
+    | A.Cons (A.Id "define", A.Cons (A.Id name, A.Cons (value, A.Nil))) ->
 
         (* Helper function: check nested inner defines only allowed at 
         beginning of function. Peek last value on stack to check if last 
@@ -237,12 +237,12 @@ let check : A.expr list -> stmt list =
         let rec check_inner_define value stack =
           match value with
           (* first inner define *)
-            A.Cons (A.Id "lambda", Cons (Nil, Cons (Cons (A.Id "define", _), 
+            A.Cons (A.Id "lambda", A.Cons (A.Nil, A.Cons (A.Cons (A.Id "define", _), 
             rest))) ->
               let new_stack =  "define" :: stack in
               check_inner_define rest new_stack
           (* define *)
-          | A.Cons (Cons (A.Id "define", _), rest) ->
+          | A.Cons (A.Cons (A.Id "define", _), rest) ->
               let hd = List.hd stack in
               if hd = "other_stmt" then
                 raise (Failure ("Nested inner defines only allowed at "
@@ -267,7 +267,7 @@ let check : A.expr list -> stmt list =
 
 
     | A.Cons (A.Id "define", _) -> raise (Failure "Invalid define statement")
-    | A.Cons (A.Id "set!", Cons (Id name, Cons (value, Nil))) ->
+    | A.Cons (A.Id "set!", A.Cons (A.Id name, A.Cons (value, A.Nil))) ->
         if Symtable.mem name symbol_table then
           let value_type, value = check_expr symbol_table value in
           let new_symbol_table = Symtable.add name value_type symbol_table in
