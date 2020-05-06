@@ -39,7 +39,7 @@ let _ =
                               (List.filter
                                 (fun x -> String.length x > 0)
                                 (Sast.string_of_stmt_block program)))
-    | IR -> print_endline (Llvm.string_of_llmodule (Irgen.translate ()))
+    | IR -> print_endline (Llvm.string_of_llmodule (Irgen.translate program))
 
     (* TODO: Replace with llvm.out after done with irgen *)
     | Exec -> print_endline (String.concat "\n\n"
