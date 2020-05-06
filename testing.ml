@@ -10,6 +10,8 @@ let ls_testcases = [
 
   ("Test case: parsing quote", "parser_quote", "-a");
 
+  ("Test case: parsing char literal", "parser_char", "-a");
+
   ("Test case: undefined variable", "semant_undefined_variable", "-s");
 
   ("Test case: simple list", "parser_simple_list", "-a");
@@ -21,6 +23,10 @@ let ls_testcases = [
   ("Test case: macro multiple rules", "macro_incre", "-s");
 
   ("Test case: macro with reserved keywords", "macro_reserved_keywords", "-s");
+
+  ("Test case: semantic, built-in functions", "semant_builtin", "-s");
+
+  ("Test case: semantic, self-quoted literal", "semant_self_quoted", "-s");
 
   (* Test SAST for fib. *)
   ("Test case: (fib.tisp, SAST)" , "fib", "-s");

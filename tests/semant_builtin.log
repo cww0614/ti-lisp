@@ -1,0 +1,1 @@
+(funcall < (funcall + (funcall car (funcall cdr (funcall cons 1 (funcall cons 2 nil)))) 3) 6)
