@@ -1,6 +1,6 @@
 .PHONY: all test
-all: 
-	ocamlbuild tilisp.native
+all:
+	ocamlbuild -package llvm tilisp.native
 test:
 	ocamlbuild -lib unix testing.native
 	./testing.native
