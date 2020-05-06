@@ -1,8 +1,8 @@
 open Ast
 
-(* Switch between print Ast, Ast after macro expansion, Sast. 
+(* Switch between print Ast, Ast after macro expansion, Sast.
 Otherwise execute source code as default. *)
-type action = Ast | Mast | Sast | Exec
+type action = Ast | Mast | Sast | IR | Exec
 
 let _ =
   (* Accept file name and support optional switch *)
@@ -12,11 +12,12 @@ let _ =
     ("-a", Arg.Unit (set_action Ast), "Print the AST");
     ("-m", Arg.Unit (set_action Mast), "Print the AST after macro expansion");
     ("-s", Arg.Unit (set_action Sast), "Print the SAST");
+    ("-l", Arg.Unit (set_action IR), "Print the LLVM IR");
   ] in
-  let usage_msg = "usage: ./tilisp.native [-a|-m|-s] [file.tlsp]" in
+  let usage_msg = "usage: ./tilisp.native [-a|-m|-s|-l] [file.tlsp]" in
   let channel = ref stdin in
   Arg.parse speclist (fun filename -> channel := open_in filename) usage_msg;
-  
+
   (* Run program *)
   let lexbuf = Lexing.from_channel !channel in
   let program = Parser.program Scanner.token lexbuf in
@@ -38,8 +39,10 @@ let _ =
                               (List.filter
                                 (fun x -> String.length x > 0)
                                 (Sast.string_of_stmt_block program)))
+    | IR -> print_endline (Llvm.string_of_llmodule (Irgen.translate ()))
+
     (* TODO: Replace with llvm.out after done with irgen *)
     | Exec -> print_endline (String.concat "\n\n"
                               (List.filter
                                 (fun x -> String.length x > 0)
-                                (Sast.string_of_stmt_block program))) 
+                                (Sast.string_of_stmt_block program)))
