@@ -1,6 +1,8 @@
 (define (hello)
   (define (a)
     (define b 2)
-    1)
+    1
+  )
   (define c 3)
-  (display a c))
+  (display a c)
+)

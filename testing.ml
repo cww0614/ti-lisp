@@ -1,11 +1,10 @@
+(* List of tuple (testcase description, testname, arguments for tilisp) *)
 let ls_testcases = [
-  (* Test SAST for fib.tlsp. Set the name of your test, inputs, switches,
-  expected output, and generated code. Compares if test_output and test_gen
-  are the same. *)
+  (* Test SAST for fib. *)
   ("Test case: (fib.tslp, SAST)" , "fib", "-s");
   
   (* Test for nested inner defines *)
-  ("Test case: (inner_define_valid.tslp, SAST)", "inner_define_valid", "-s");
+  ("Test case: (inner_define_valid.tsl p, SAST)", "inner_define_valid", "-s");
 
   (* Test for nested inner defines *)
   ("Test case: (inner_define_invalid.tslp, SAST)", "inner_define_invalid", "-s")
@@ -23,7 +22,7 @@ let compare_list a b =
   List.for_all2 compare_elem a b in
 let single_test (testcase : (string * string * string)) = 
   let (title, test_name, test_arg) = testcase in
-  let cmd_run = "./tilisp.native "^test_arg^" tests/"^test_name^".tlsp" in
+  let cmd_run = "./tilisp.native "^test_arg^" tests/"^test_name^".tisp" in
   let file_expected = "tests/"^test_name^".output" in
   let (output, inp, errors) = Unix.open_process_full cmd_run [| |] in
   let ls_stdout = read_lines output in
