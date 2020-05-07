@@ -42,8 +42,7 @@ let translate (stmts : stmt list) =
   and _type_string = L.const_int i8_t 2
   and _type_cons = L.const_int i8_t 3
   and _type_bool = L.const_int i8_t 4
-  and type_nil = L.const_int i8_t 5
-  and _type_func = L.const_int i8_t 6 in
+  and _type_func = L.const_int i8_t 5 in
 
   (* When using a value as specific type, the value_type will be
      bitcasted to one of theses types *)
@@ -64,8 +63,6 @@ let translate (stmts : stmt list) =
   let _value_type_func =
     create_struct "value_t_func" context [| i8_t; i8_ptr_t; i8_t; i8_t |]
   in
-  let value_type_nil = create_struct "value_t_nil" context [| i8_t |] in
-
   let printf_func : L.llvalue =
     let printf_t : L.lltype =
       L.var_arg_function_type i32_t [| L.pointer_type i8_t |]
@@ -96,11 +93,7 @@ let translate (stmts : stmt list) =
 
   let display_func =
     (* TODO: make this support more data types *)
-    let function_type =
-      L.function_type
-        (L.pointer_type value_type)
-        [| L.pointer_type value_type |]
-    in
+    let function_type = L.function_type value_ptr_type [| value_ptr_type |] in
     let func = L.define_function "display" function_type the_module in
     let builder = L.builder_at_end context (L.entry_block func) in
     let arg = (L.params func).(0) in
@@ -113,10 +106,7 @@ let translate (stmts : stmt list) =
       (L.build_call printf_func
          [| L.build_global_stringptr "%d\n" "fmt" builder; int_value |]
          "" builder);
-    ignore
-      (L.build_ret
-         (build_literal "ret" type_nil value_type_nil [] builder)
-         builder);
+    ignore (L.build_ret (L.const_null value_ptr_type) builder);
     func
   in
 
