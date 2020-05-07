@@ -199,11 +199,5 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
 
 (* Apply expand to a list of expression sequentially *)
 let expand_all (exprs : expr list) : expr list =
-  let rec expand_all_iter symbol_table = function
-    | [] -> []
-    | hd :: tl ->
-        let symbol_table, expr = expand symbol_table hd in
-        expr :: expand_all_iter symbol_table tl
-  in
   let _, exprs = Utils.fold_map expand builtin_macros exprs in
   exprs

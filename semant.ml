@@ -284,13 +284,6 @@ let check : A.expr list -> stmt list =
         (symbol_table, expr_type, Expr expr)
   in
 
-  let rec check_iter symbol_table : A.expr list -> stmt list = function
-    | [] -> []
-    | hd :: tl ->
-        let symbol_table, _, new_head = check_stmt symbol_table hd in
-        new_head :: check_iter symbol_table tl
-  in
-
   let builtin_variables =
     Symtable.from
       [
