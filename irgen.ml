@@ -14,10 +14,10 @@ let translate (stmts : stmt list) =
   let context = L.global_context () in
   let the_module = L.create_module context "ti-lisp" in
 
-  let i1_t = L.i8_type context in
+  let i1_t = L.i1_type context in
   let i8_t = L.i8_type context in
   let i32_t = L.i32_type context in
-  let i64_t = L.i32_type context in
+  let i64_t = L.i64_type context in
 
   let i8_ptr_t = L.pointer_type i8_t in
 
@@ -46,7 +46,7 @@ let translate (stmts : stmt list) =
 
   (* When using a value as specific type, the value_type will be
      bitcasted to one of theses types *)
-  let value_type_int = create_struct "value_t_int" context [| i8_t; i32_t |] in
+  let value_type_int = create_struct "value_t_int" context [| i8_t; i64_t |] in
   let _value_type_char =
     create_struct "value_t_char" context [| i8_t; i8_t |]
   in
@@ -63,16 +63,9 @@ let translate (stmts : stmt list) =
   let _value_type_func =
     create_struct "value_t_func" context [| i8_t; i8_ptr_t; i8_t; i8_t |]
   in
-  let printf_func : L.llvalue =
-    let printf_t : L.lltype =
-      L.var_arg_function_type i32_t [| L.pointer_type i8_t |]
-    in
-    L.declare_function "printf" printf_t the_module
-  in
-
-  let _exit_func : L.llvalue =
-    let exit_t : L.lltype = L.function_type void_t [| i32_t |] in
-    L.declare_function "exit" exit_t the_module
+  let display_func : L.llvalue =
+    let display_t = L.function_type value_ptr_type [| value_ptr_type |] in
+    L.declare_function "display" display_t the_module
   in
 
   let build_literal name type_value ltype values builder =
@@ -91,37 +84,18 @@ let translate (stmts : stmt list) =
     alloca
   in
 
-  let display_func =
-    (* TODO: make this support more data types *)
-    let function_type = L.function_type value_ptr_type [| value_ptr_type |] in
-    let func = L.define_function "display" function_type the_module in
-    let builder = L.builder_at_end context (L.entry_block func) in
-    let arg = (L.params func).(0) in
-    let casted =
-      L.build_bitcast arg (L.pointer_type value_type_int) "int" builder
-    in
-    let int_value_ptr = L.build_struct_gep casted 1 "int_val_ptr" builder in
-    let int_value = L.build_load int_value_ptr "int_val" builder in
-    ignore
-      (L.build_call printf_func
-         [| L.build_global_stringptr "%d\n" "fmt" builder; int_value |]
-         "" builder);
-    ignore (L.build_ret (L.const_null value_ptr_type) builder);
-    func
-  in
-
   let build_memcpy src dest builder =
     let memcpy_func =
       let func_type =
-        L.function_type void_t [| i8_ptr_t; i8_ptr_t; i32_t; i1_t |]
+        L.function_type void_t [| i8_ptr_t; i8_ptr_t; i64_t; i1_t |]
       in
-      L.declare_function "llvm.memcpy" func_type the_module
+      L.declare_function "llvm.memcpy.p0i8.p0i8.i64" func_type the_module
     in
 
     let dest = L.build_bitcast dest i8_ptr_t "memcpy_dest" builder in
     let src = L.build_bitcast src i8_ptr_t "memcpy_src" builder in
     L.build_call memcpy_func
-      [| dest; src; L.const_int i32_t value_size; L.const_int i1_t 0 |]
+      [| dest; src; L.const_int i64_t value_size; L.const_int i1_t 0 |]
       "" builder
   in
 
@@ -146,7 +120,7 @@ let translate (stmts : stmt list) =
     | IntLit v ->
         ( builder,
           build_literal name type_integer value_type_int
-            [ (1, L.const_int i32_t v) ]
+            [ (1, L.const_int i64_t v) ]
             builder )
     | Id name -> (
         match Symtable.find name st with
