@@ -3,7 +3,7 @@
 
 value_t *display(const value_t *value) {
   if (value->type == TYPE_INTEGER) {
-    printf("%d\n", value->value.int_value);
+    std::cout << value->value.int_value << std::endl;
   }
 
   return NULL;
@@ -28,8 +28,10 @@ static const char *type_name(uint8_t type) {
 
 void check_type(const value_t *value, uint8_t expected_type) {
   if (value == NULL || value->type != expected_type) {
-    printf("Expected variable to a %s, but got %s\n", type_name(expected_type),
-           type_name(value->type));
+    std::cout << "Exepcted variable to be a " << type_name(expected_type)
+              << ", but got "
+              << "Expected variable to a %s, but got " << type_name(value->type)
+              << std::endl;
     exit(1);
   }
 }
