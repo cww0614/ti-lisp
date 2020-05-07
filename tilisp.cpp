@@ -28,10 +28,18 @@ static const char *type_name(uint8_t type) {
   }
 }
 
+static const char *value_type_name(const value_t *value) {
+  if (value == nullptr) {
+    return "nil";
+  }
+
+  return type_name(value->type);
+}
+
 void check_type(const value_t *value, uint8_t expected_type) {
   if (value == nullptr || value->type != expected_type) {
     std::cout << "Exepcted variable to be a " << type_name(expected_type)
-              << ", but got a " << type_name(value->type) << std::endl;
+              << ", but got a " << value_type_name(value) << std::endl;
     exit(1);
   }
 }
