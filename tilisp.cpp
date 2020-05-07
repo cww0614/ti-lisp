@@ -23,15 +23,15 @@ static const char *type_name(uint8_t type) {
     return "boolean";
   case TYPE_FUNC:
     return "function";
+  default:
+    return "unknown";
   }
 }
 
 void check_type(const value_t *value, uint8_t expected_type) {
   if (value == nullptr || value->type != expected_type) {
     std::cout << "Exepcted variable to be a " << type_name(expected_type)
-              << ", but got "
-              << "Expected variable to a %s, but got " << type_name(value->type)
-              << std::endl;
+              << ", but got a " << type_name(value->type) << std::endl;
     exit(1);
   }
 }

@@ -4,6 +4,7 @@ and expr =
   | CharLit of char
   | StrLit of string
   | IntLit of int
+  | BoolLit of bool
   | Id of string
   (* lists/cons: '(1 2 3 ...) *)
   | Cons of expr * expr
@@ -43,6 +44,7 @@ and string_of_expr : expr -> string = function
   | StrLit x -> "\"" ^ String.escaped x ^ "\""
   | IntLit x -> string_of_int x
   | CharLit x -> "'" ^ Char.escaped x ^ "'"
+  | BoolLit x -> if x then "#true" else "#false"
   | Id name -> name
   | Begin body ->
       "(begin\n"

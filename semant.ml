@@ -56,9 +56,12 @@ let check : A.expr list -> stmt list =
     in
 
     function
-    | A.Id name ->
-        if Symtable.mem name symbol_table then (Value, Id name)
-        else raise (Failure ("Undefined variable " ^ name))
+    | A.Id name -> (
+        match name with
+        | _ when Symtable.mem name symbol_table -> (Value, Id name)
+        | "true" -> (Value, BoolLit true)
+        | "false" -> (Value, BoolLit false)
+        | _ -> raise (Failure ("Undefined variable " ^ name)) )
     | A.Quote expr -> (Value, quote_expr expr)
     | A.Expansion -> raise (Failure "Invalid expansion dots")
     (* Function call like expression *)
@@ -301,8 +304,6 @@ let check : A.expr list -> stmt list =
         ("cdr", Function (Value, 1, 1));
         ("list", Function (Value, 1, 256));
         ("display", Function (Void, 1, 256));
-        ("true", Value);
-        ("false", Value);
       ]
   in
 

@@ -41,7 +41,7 @@ let translate (stmts : stmt list) =
   and _type_char = L.const_int i8_t 1
   and _type_string = L.const_int i8_t 2
   and _type_cons = L.const_int i8_t 3
-  and _type_bool = L.const_int i8_t 4
+  and type_bool = L.const_int i8_t 4
   and _type_func = L.const_int i8_t 5 in
 
   (* When using a value as specific type, the value_type will be
@@ -50,9 +50,7 @@ let translate (stmts : stmt list) =
   let _value_type_char =
     create_struct "value_t_char" context [| i8_t; i8_t |]
   in
-  let _value_type_bool =
-    create_struct "value_t_bool" context [| i8_t; i1_t |]
-  in
+  let value_type_bool = create_struct "value_t_bool" context [| i8_t; i1_t |] in
   let _value_type_string =
     create_struct "value_t_string" context [| i8_t; i8_ptr_t; i64_t |]
   in
@@ -66,6 +64,11 @@ let translate (stmts : stmt list) =
   let display_func : L.llvalue =
     let display_t = L.function_type value_ptr_type [| value_ptr_type |] in
     L.declare_function "display" display_t the_module
+  in
+
+  let check_type_func : L.llvalue =
+    let func_type = L.function_type void_t [| value_ptr_type; i8_t |] in
+    L.declare_function "check_type" func_type the_module
   in
 
   let build_literal name type_value ltype values builder =
@@ -99,6 +102,12 @@ let translate (stmts : stmt list) =
       "" builder
   in
 
+  let add_terminal builder instr =
+    match L.block_terminator (L.insertion_block builder) with
+    | Some _ -> ()
+    | None -> ignore (instr builder)
+  in
+
   let rec build_stmt (func : L.llvalue) (st : symbol_table)
       (builder : L.llbuilder) : stmt -> symbol_table * L.llbuilder = function
     | Define (name, value) ->
@@ -122,10 +131,56 @@ let translate (stmts : stmt list) =
           build_literal name type_integer value_type_int
             [ (1, L.const_int i64_t v) ]
             builder )
+    | BoolLit v ->
+        ( builder,
+          build_literal name type_bool value_type_bool
+            [ (1, L.const_int i1_t (if v then 1 else 0)) ]
+            builder )
     | Id name -> (
         match Symtable.find name st with
         | Some value -> (builder, value)
         | None -> raise (Failure "Undefined variable") )
+    | If (pred, then_c, else_c) ->
+        let builder, pred_val = build_expr func "cmp" st builder pred in
+        let casted =
+          L.build_bitcast pred_val
+            (L.pointer_type value_type_bool)
+            "bool_type_val" builder
+        in
+        let value_ptr = L.build_struct_gep casted 1 "bool_val_ptr" builder in
+        let value = L.build_load value_ptr "bool_val" builder in
+        let orig_builder = builder in
+        ignore
+          (L.build_call check_type_func [| pred_val; type_bool |] "" builder);
+        let then_bb = L.append_block context "then" func in
+        let builder, then_value =
+          build_expr func "then" st (L.builder_at_end context then_bb) then_c
+        in
+        let else_bb = L.append_block context "else" func in
+        let else_value =
+          match else_c with
+          | Some expr ->
+              let _, value =
+                build_expr func "else" st
+                  (L.builder_at_end context else_bb)
+                  expr
+              in
+              value
+          | None -> L.const_null value_ptr_type
+        in
+
+        let end_bb = L.append_block context "end" func in
+        let build_br_end = L.build_br end_bb in
+        add_terminal (L.builder_at_end context then_bb) build_br_end;
+        add_terminal (L.builder_at_end context else_bb) build_br_end;
+        ignore (L.build_cond_br value then_bb else_bb orig_builder);
+        let builder = L.builder_at_end context end_bb in
+        let phi =
+          L.build_phi
+            [ (then_value, then_bb); (else_value, else_bb) ]
+            "ifval" builder
+        in
+        (builder, phi)
     | FunCall (func, args) -> (
         match func with
         | Id name -> (
@@ -156,12 +211,14 @@ let translate (stmts : stmt list) =
 
   let builder = L.builder_at_end context (L.entry_block main_func) in
 
-  ignore
-    (List.fold_left
-       (fun ctx stmt ->
-         let st, builder = ctx in
-         build_stmt main_func st builder stmt)
-       (Symtable.from [ ("display", display_func) ], builder)
-       stmts);
+  let _, builder =
+    List.fold_left
+      (fun ctx stmt ->
+        let st, builder = ctx in
+        build_stmt main_func st builder stmt)
+      (Symtable.from [ ("display", display_func) ], builder)
+      stmts
+  in
+
   ignore (L.build_ret (L.const_int i32_t 0) builder);
   the_module
