@@ -1,6 +1,6 @@
 open Sast
 module A = Ast
-module StringMap = Map.Make(String)
+module StringMap = Map.Make (String)
 
 type value_type =
   (* return type, min number of args, max number of args *)
@@ -65,8 +65,8 @@ let check : A.expr list -> stmt list =
     | A.Cons (expr, args) -> (
         match expr with
         | A.Id id when is_function id symbol_table -> (
-            match (Symtable.find id symbol_table) with
-            | Some Function (ret, min, max) ->
+            match Symtable.find id symbol_table with
+            | Some (Function (ret, min, max)) ->
                 let args = check_expr_list symbol_table args in
                 let arg_len = List.length args in
                 if min <= arg_len && arg_len <= max then
@@ -77,7 +77,8 @@ let check : A.expr list -> stmt list =
                        ( "Function " ^ id ^ " takes " ^ string_of_int min
                        ^ " to " ^ string_of_int max ^ " arguments, instead of "
                        ^ string_of_int arg_len ))
-            | Some Any -> (Any, FunCall (Id id, check_expr_list symbol_table args))
+            | Some Any ->
+                (Any, FunCall (Id id, check_expr_list symbol_table args))
             | _ -> raise (Failure (id ^ " is not a function")) )
         | A.Id "if" -> (
             match args with
@@ -117,15 +118,17 @@ let check : A.expr list -> stmt list =
             (* check for duplicates in let bindings *)
             let rec check_let_duplicates bindings map =
               match bindings with
-                | (name, _, _) :: rest ->
-                  if StringMap.exists (fun key _ -> if key = name 
-                                                    then true 
-                                                    else false) map 
-                  then raise (Failure ("Duplications in let binding list"))
-                  else let new_map = StringMap.add name name map in
-                  check_let_duplicates rest new_map
-                | _ -> None
-              in
+              | (name, _, _) :: rest ->
+                  if
+                    StringMap.exists
+                      (fun key _ -> if key = name then true else false)
+                      map
+                  then raise (Failure "Duplications in let binding list")
+                  else
+                    let new_map = StringMap.add name name map in
+                    check_let_duplicates rest new_map
+              | _ -> None
+            in
 
             match args with
             | A.Cons (bindings, body) ->
@@ -159,30 +162,31 @@ let check : A.expr list -> stmt list =
             in
             (stmt_type, Begin stmts)
         | A.Id "lambda" -> (
-
             (* check if the arguments of a lambda are well formed *)
             let rec check_lambda_bindings = function
               | A.Nil -> []
               | A.Cons (A.Id name, rest) -> name :: check_lambda_bindings rest
               | _ -> raise (Failure "Invalid lambda argument list")
             in
-            
+
             (* check for duplicates in lambda arguments *)
             let rec check_lambda_duplicates bindings map =
-            match bindings with
-              | name :: rest -> 
-                if StringMap.exists (fun key _ -> if key = name 
-                                                  then true 
-                                                  else false) map 
-                then raise (Failure ("Duplications in lambda argument list"))
-                else let new_map = StringMap.add name name map in
-                check_lambda_duplicates rest new_map
+              match bindings with
+              | name :: rest ->
+                  if
+                    StringMap.exists
+                      (fun key _ -> if key = name then true else false)
+                      map
+                  then raise (Failure "Duplications in lambda argument list")
+                  else
+                    let new_map = StringMap.add name name map in
+                    check_lambda_duplicates rest new_map
               | _ -> None
             in
 
             match args with
             | A.Cons (arg_list, body) ->
-                 let bindings = check_lambda_bindings arg_list in
+                let bindings = check_lambda_bindings arg_list in
 
                 (* check for lambda duplicates *)
                 let map = StringMap.empty in
@@ -230,26 +234,28 @@ let check : A.expr list -> stmt list =
         let expr_type, expr = check_expr symbol_table expr in
         (symbol_table, expr_type, Expr expr)
     | A.Cons (A.Id "define", A.Cons (A.Id name, A.Cons (value, A.Nil))) ->
-
-        (* Helper function: check nested inner defines only allowed at 
-        beginning of function. Peek last value on stack to check if last 
-        function is an `other_statement` before allowing next `define`. *)
+        (* Helper function: check nested inner defines only allowed at
+           beginning of function. Peek last value on stack to check if last
+           function is an `other_statement` before allowing next `define`. *)
         let rec check_inner_define value stack =
           match value with
           (* first inner define *)
-            A.Cons (A.Id "lambda", A.Cons (A.Nil, A.Cons (A.Cons (A.Id "define", _), 
-            rest))) ->
-              let new_stack =  "define" :: stack in
+          | A.Cons
+              ( A.Id "lambda",
+                A.Cons (A.Nil, A.Cons (A.Cons (A.Id "define", _), rest)) ) ->
+              let new_stack = "define" :: stack in
               check_inner_define rest new_stack
           (* define *)
           | A.Cons (A.Cons (A.Id "define", _), rest) ->
               let hd = List.hd stack in
               if hd = "other_stmt" then
-                raise (Failure ("Nested inner defines only allowed at "
-                                ^"beginning of function") )
-              else 
-              let new_stack = "define" :: stack in
-              check_inner_define rest new_stack
+                raise
+                  (Failure
+                     ( "Nested inner defines only allowed at "
+                     ^ "beginning of function" ))
+              else
+                let new_stack = "define" :: stack in
+                check_inner_define rest new_stack
           (* other statements *)
           | A.Cons (_, rest) ->
               let new_stack = "other_stmt" :: stack in
@@ -264,8 +270,6 @@ let check : A.expr list -> stmt list =
         let new_symbol_table = Symtable.add name value_type symbol_table in
         let value_type, value = check_expr new_symbol_table value in
         (new_symbol_table, Void, Define (name, value))
-
-
     | A.Cons (A.Id "define", _) -> raise (Failure "Invalid define statement")
     | A.Cons (A.Id "set!", A.Cons (A.Id name, A.Cons (value, A.Nil))) ->
         if Symtable.mem name symbol_table then
@@ -308,4 +312,14 @@ let check : A.expr list -> stmt list =
         ("false", Value);
       ]
   in
-  check_iter builtin_variables
+
+  function
+  | stmts ->
+      let _, sast =
+        Utils.fold_map
+          (fun st stmt ->
+            let st, _, stmt = check_stmt st stmt in
+            (st, stmt))
+          builtin_variables stmts
+      in
+      sast

@@ -205,4 +205,5 @@ let expand_all (exprs : expr list) : expr list =
         let symbol_table, expr = expand symbol_table hd in
         expr :: expand_all_iter symbol_table tl
   in
-  expand_all_iter builtin_macros exprs
+  let _, exprs = Utils.fold_map expand builtin_macros exprs in
+  exprs
