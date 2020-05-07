@@ -1,4 +1,5 @@
 (* Building this with "ocamlbuild -lib unix testing.native" *)
+module S = String;;
 
 (* List of tuple (testcase description, testname, arguments for tilisp) *)
 let ls_testcases = [
@@ -56,13 +57,28 @@ let read_lines ic : string list =
     | Some s -> loop (s :: acc)
     | None -> close_in ic; List.rev acc in
   loop [] in
+let string_to_list s  = 
+  let ls = ref [] in
+  let _ = S.iter (fun c -> ignore(ls := c::!ls)) s in
+  List.rev (!ls) in
+
+let subset_string (full_str: string) (pattern: string) : bool =
+  let s = string_to_list full_str and p = string_to_list pattern in
+  let rec match_char_list (s: char list) (p: char list) : bool =
+  match (s, p) with
+   (_, []) -> true
+  | (h1::t1, h2::t2) when h1 = h2 -> match_char_list t1 t2
+  | (_::t1, ls2) -> match_char_list t1 ls2
+  | _ -> false in
+  match_char_list s p in
 
 let rec compare_list (a: string list) (b: string list) : bool =
   match (a, b) with
     ([], []) -> true
-  | (h1::t1, ls2) when (String.trim h1) = "" -> compare_list t1 ls2
-  | (ls1, h2::t2) when (String.trim h2) = "" -> compare_list ls1 t2
-  | (h1::t1, h2::t2) when (String.trim h1) = (String.trim h2) -> compare_list t1 t2
+  | (h1::t1, ls2) when (S.trim h1) = "" -> compare_list t1 ls2
+  | (ls1, h2::t2) when (S.trim h2) = "" -> compare_list ls1 t2
+  | (h1::t1, h2::t2) when subset_string (S.trim h1) (S.trim h2) 
+      -> compare_list t1 t2
   | _ -> false in
 
 let single_test (testcase : (string * string * string)) = 
@@ -75,7 +91,9 @@ let single_test (testcase : (string * string * string)) =
   let ls_actual = ls_stdout @ ls_errors in
   let ic_expected = open_in file_expected in 
   let ls_expected = read_lines ic_expected in
-  let _ = Unix.close_process_full (output, inp, errors) in
+  let _ = ignore(Unix.close_process_full (output, inp, errors));
+  if (List.length ls_expected) = 0 
+    then raise (Failure ("Empty expected output file: "^test_name)) in
   if (compare_list ls_actual ls_expected) then
   print_endline (title^" [passed].") else (print_endline (title^" [failed].");
   print_string "Expeceted:\n"; List.iter print_endline ls_expected;
