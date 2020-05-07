@@ -6,7 +6,6 @@ type value_type =
   (* return type, min number of args, max number of args *)
   | Function of value_type * int * int
   | Value
-  | Void
   | Any
 
 type symbol_table = value_type Symtable.symbol_table
@@ -21,7 +20,7 @@ let check : A.expr list -> stmt list =
 
   let rec check_stmt_block (symbol_table : symbol_table) :
       A.expr -> symbol_table * value_type * stmt list = function
-    | A.Nil -> (symbol_table, Void, [])
+    | A.Nil -> (symbol_table, Value, [])
     | A.Cons (hd, A.Nil) ->
         let symbol_table, stmt_type, stmt = check_stmt symbol_table hd in
         (symbol_table, stmt_type, [ stmt ])
@@ -272,13 +271,13 @@ let check : A.expr list -> stmt list =
         let value_type, _ = check_expr temp_symbol_table value in
         let new_symbol_table = Symtable.add name value_type symbol_table in
         let value_type, value = check_expr new_symbol_table value in
-        (new_symbol_table, Void, Define (name, value))
+        (new_symbol_table, Value, Define (name, value))
     | A.Cons (A.Id "define", _) -> raise (Failure "Invalid define statement")
     | A.Cons (A.Id "set!", A.Cons (A.Id name, A.Cons (value, A.Nil))) ->
         if Symtable.mem name symbol_table then
           let value_type, value = check_expr symbol_table value in
           let new_symbol_table = Symtable.add name value_type symbol_table in
-          (new_symbol_table, Void, Set (name, value))
+          (new_symbol_table, Value, Set (name, value))
         else raise (Failure ("Variable " ^ name ^ " is undefined"))
     | A.Cons (A.Id "set!", _) -> raise (Failure "Invalid set! statement")
     (* fallback to expr *)
@@ -303,7 +302,7 @@ let check : A.expr list -> stmt list =
         ("car", Function (Value, 1, 1));
         ("cdr", Function (Value, 1, 1));
         ("list", Function (Value, 1, 256));
-        ("display", Function (Void, 1, 256));
+        ("display", Function (Value, 1, 256));
       ]
   in
 

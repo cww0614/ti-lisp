@@ -64,10 +64,6 @@ Only four types are defined:
   callable objects. Callable objects have `function<return type, min
   arg number max arg number>` as their type signature, while
   non-callable objects simply have type `value`.
-- void: for `set!` and `define` statements, I decide that they will
-  not return any values, and their return values will be of type
-  `void`. Whenever we want to use a value of `void` type, the compiler
-  should raise an error.
 - any: when types cannot be determined at compile time, like arguments
   in `lambda`, variables will be assigned `any` type, and type
   checking is totally ignored for `any` type variables.

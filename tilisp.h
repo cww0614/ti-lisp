@@ -42,6 +42,8 @@ struct value_t {
 value_t *display(const value_t *);
 
 void check_type(const value_t *, uint8_t);
+
+void check_func(const value_t *, uint8_t);
 }
 
 #endif /* end of include guard: TI_LISP_BUILTIN_H */
