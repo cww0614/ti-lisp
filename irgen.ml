@@ -124,7 +124,7 @@ let translate (stmts : stmt list) =
         let builder, _ = build_unnamed_expr func st builder expr in
         (st, builder)
   and build_unnamed_expr func st builder = build_expr func "unnamed" st builder
-  and build_expr (func : L.llvalue) (name : string) (st : symbol_table)
+  and build_expr (the_func : L.llvalue) (name : string) (st : symbol_table)
       (builder : L.llbuilder) : expr -> L.llbuilder * L.llvalue = function
     | IntLit v ->
         ( builder,
@@ -141,7 +141,7 @@ let translate (stmts : stmt list) =
         | Some value -> (builder, value)
         | None -> raise (Failure "Undefined variable") )
     | If (pred, then_c, else_c) ->
-        let builder, pred_val = build_expr func "cmp" st builder pred in
+        let builder, pred_val = build_expr the_func "cmp" st builder pred in
         let casted =
           L.build_bitcast pred_val
             (L.pointer_type value_type_bool)
@@ -152,16 +152,18 @@ let translate (stmts : stmt list) =
         let orig_builder = builder in
         ignore
           (L.build_call check_type_func [| pred_val; type_bool |] "" builder);
-        let then_bb = L.append_block context "then" func in
+        let then_bb = L.append_block context "then" the_func in
         let builder, then_value =
-          build_expr func "then" st (L.builder_at_end context then_bb) then_c
+          build_expr the_func "then" st
+            (L.builder_at_end context then_bb)
+            then_c
         in
-        let else_bb = L.append_block context "else" func in
+        let else_bb = L.append_block context "else" the_func in
         let else_value =
           match else_c with
           | Some expr ->
               let _, value =
-                build_expr func "else" st
+                build_expr the_func "else" st
                   (L.builder_at_end context else_bb)
                   expr
               in
@@ -169,7 +171,7 @@ let translate (stmts : stmt list) =
           | None -> L.const_null value_ptr_type
         in
 
-        let end_bb = L.append_block context "end" func in
+        let end_bb = L.append_block context "end" the_func in
         let build_br_end = L.build_br end_bb in
         add_terminal (L.builder_at_end context then_bb) build_br_end;
         add_terminal (L.builder_at_end context else_bb) build_br_end;
@@ -193,7 +195,9 @@ let translate (stmts : stmt list) =
                 (* Builtin functions *)
                 | L.TypeKind.Pointer ->
                     let builder, args =
-                      Utils.fold_map (build_unnamed_expr func st) builder args
+                      Utils.fold_map
+                        (build_unnamed_expr the_func st)
+                        builder args
                     in
                     let args = Array.of_list args in
                     let ret = L.build_call func args "ret" builder in
