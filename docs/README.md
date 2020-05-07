@@ -1,12 +1,25 @@
 # ti-lisp: a variant of Scheme 
 
-## Setup
+## Get started
+
+### Environment requirements
+
+System packages:
+
+1. llvm-dev >= 6.0
+2. cmake >= 3.10
+
+OCaml packages from opam:
+
+1. llvm
+2. ocamlbuild
+
+### Setup
 
 1. Build the compiler:
 
 ```sh
-make all
-./tilisp.native -h
+make tilisp.native
 ```
 
 2. Run the testcases:
@@ -15,12 +28,14 @@ make all
 make test
 ```
 
-## Document for Each Pass
+## Documents
+
+### Compliation phases
 
 1. [Lexing + Parsing](parsing.md)
 2. [Macro Processing](macro.md)
 3. [Semantic Analysis](semant.md)
 
-## General
+### General modules
 
 1. [Testing](testing.md)
