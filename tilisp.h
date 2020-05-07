@@ -1,7 +1,7 @@
 #ifndef TI_LISP_BUILTIN_H
 #define TI_LISP_BUILTIN_H
 
-#include <stdint.h>
+#include <cstdint>
 
 enum value_type {
   TYPE_INTEGER = 0,
@@ -37,6 +37,8 @@ struct value_t {
   } value;
 };
 
-struct value_t *display(struct value_t *);
+value_t *display(const value_t *);
+
+void check_type(const value_t *, uint8_t);
 
 #endif /* end of include guard: TI_LISP_BUILTIN_H */

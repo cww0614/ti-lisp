@@ -3,7 +3,7 @@
 SRC_FILES = ast.ml irgen.ml macro.ml parser.mly sast.ml scanner.mll semant.ml symtable.ml tilisp.ml utils.ml
 TEST_FILES = testing.ml
 
-all: tilisp.native testing.native libbuiltins.a
+all: tilisp.native testing.native libtilisp.a
 
 tilisp.native: $(SRC_FILES)
 	ocamlbuild -no-hygiene -package llvm tilisp.native
@@ -11,14 +11,14 @@ tilisp.native: $(SRC_FILES)
 testing.native: $(TEST_FILES)
 	ocamlbuild -lib unix testing.native
 
-builtins.o: builtins.h builtins.c
-	gcc -std=c99 builtins.c -c -o builtins.o
+tilisp.o: tilisp.h tilisp.cpp
+	g++ tilisp.cpp -c -o tilisp.o
 
-libbuiltins.a: builtins.o
-	ar -crs libbuiltins.a builtins.o
-	ranlib libbuiltins.a
+libtilisp.a: tilisp.o
+	ar -crs libtilisp.a tilisp.o
+	ranlib libtilisp.a
 
-test: testing.native libbuiltins.a
+test: testing.native libtilisp.a
 	./testing.native
 
 clean:
