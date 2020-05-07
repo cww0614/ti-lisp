@@ -6,7 +6,7 @@ value_t *display(const value_t *value) {
     std::cout << value->value.int_value << std::endl;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 static const char *type_name(uint8_t type) {
@@ -27,7 +27,7 @@ static const char *type_name(uint8_t type) {
 }
 
 void check_type(const value_t *value, uint8_t expected_type) {
-  if (value == NULL || value->type != expected_type) {
+  if (value == nullptr || value->type != expected_type) {
     std::cout << "Exepcted variable to be a " << type_name(expected_type)
               << ", but got "
               << "Expected variable to a %s, but got " << type_name(value->type)
