@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+extern "C" {
+
 enum value_type {
   TYPE_INTEGER = 0,
   TYPE_CHAR = 1,
@@ -40,5 +42,6 @@ struct value_t {
 value_t *display(const value_t *);
 
 void check_type(const value_t *, uint8_t);
+}
 
 #endif /* end of include guard: TI_LISP_BUILTIN_H */
