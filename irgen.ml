@@ -103,8 +103,6 @@ let translate (stmts : stmt list) =
     in
     let func = L.define_function "display" function_type the_module in
     let builder = L.builder_at_end context (L.entry_block func) in
-    (* let arg = L.build_alloca value_type "arg" builder in
-     * ignore (L.build_store (L.params func).(0) arg builder); *)
     let arg = (L.params func).(0) in
     let casted =
       L.build_bitcast arg (L.pointer_type value_type_int) "int" builder
