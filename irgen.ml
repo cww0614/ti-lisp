@@ -61,6 +61,27 @@ let translate (stmts : stmt list) =
   let value_type_func =
     create_struct "value_t_func" context [| i8_t; i8_ptr_t; i8_t; i8_t |]
   in
+
+  let func_access_link_md = L.mdkind_id context "tilisp.access_link.dep_num " in
+  let func_get_al (value : L.llvalue) =
+    match L.metadata value func_access_link_md with
+    | Some metadata ->
+        let values = L.get_mdnode_operands metadata in
+        Array.to_list
+          (Array.map
+             (fun v ->
+               match L.string_of_const v with
+               | Some string -> string
+               | None -> raise (Failure "Invalid metadata"))
+             values)
+    | None -> raise (Failure "No metadata is set for the value")
+  in
+  let func_set_al (value : L.llvalue) (deps : string list) =
+    L.set_metadata value func_access_link_md
+      (L.mdnode context
+         (Array.of_list (List.map (L.const_string context) deps)))
+  in
+
   let display_func : L.llvalue =
     let display_t = L.function_type value_ptr_type [| value_ptr_type |] in
     L.declare_function "display" display_t the_module
@@ -111,6 +132,69 @@ let translate (stmts : stmt list) =
     match L.block_terminator (L.insertion_block builder) with
     | Some _ -> ()
     | None -> ignore (instr builder)
+  in
+
+  let builtins = Symtable.from [ ("display", display_func) ] in
+
+  (* Find which variables in outer function are used *)
+  let rec collect_dependency (stmts : stmt list) (args : string list) :
+      string list =
+    let rec collect_dep_stmts (st : unit Symtable.symbol_table)
+        (outer_vars : string list) (stmts : stmt list) :
+        unit Symtable.symbol_table * string list =
+      List.fold_left
+        (fun ctx stmt ->
+          let st, outer_vars = ctx in
+          collect_dep_stmt st outer_vars stmt)
+        (st, outer_vars) stmts
+    and collect_dep_stmt (st : unit Symtable.symbol_table)
+        (outer_vars : string list) :
+        stmt -> unit Symtable.symbol_table * string list = function
+      | Define (name, value) ->
+          let st = Symtable.add name () st in
+          (st, collect_dep_expr st outer_vars value)
+      | Set (name, value) ->
+          if Symtable.mem name st then (st, collect_dep_expr st outer_vars value)
+          else (st, collect_dep_expr st (name :: outer_vars) value)
+      | Expr expr -> (st, collect_dep_expr st outer_vars expr)
+    and collect_dep_expr (st : unit Symtable.symbol_table)
+        (outer_vars : string list) : expr -> string list = function
+      | Id name ->
+          if Symtable.mem name st || Symtable.mem name builtins then outer_vars
+          else name :: outer_vars
+      | If (pred, then_c, else_c) -> (
+          let outer_vars = collect_dep_expr st outer_vars pred in
+          let outer_vars = collect_dep_expr st outer_vars then_c in
+          match else_c with
+          | Some else_c -> collect_dep_expr st outer_vars else_c
+          | None -> outer_vars )
+      | Lambda (args, body) ->
+          let st =
+            List.fold_left (fun st name -> Symtable.add name () st) st args
+          in
+          let _, outer_vars = collect_dep_stmts st outer_vars body in
+          outer_vars
+      | FunCall (func, args) ->
+          let outer_vars = collect_dep_expr st outer_vars func in
+          List.fold_left (collect_dep_expr st) outer_vars args
+      | _ -> outer_vars
+    in
+
+    let st = Symtable.from [] in
+    let st = List.fold_left (fun st name -> Symtable.add name () st) st args in
+
+    let _, outer_vars = collect_dep_stmts st [] stmts in
+    List.sort_uniq String.compare outer_vars
+  in
+
+  let function_type (arg_size : int) (deps : string list) : L.lltype =
+    let args_types = Array.make (1 + arg_size) value_ptr_type in
+    let access_link_type =
+      L.pointer_type
+        (L.struct_type context (Array.make (List.length deps) value_ptr_type))
+    in
+    args_types.(0) <- access_link_type;
+    L.function_type value_ptr_type args_types
   in
 
   let rec build_stmt (func : L.llvalue) (st : symbol_table)
@@ -199,18 +283,43 @@ let translate (stmts : stmt list) =
                 (* User defined functions *)
                 | L.TypeKind.Struct ->
                     let arg_size = List.length args in
+                    (* check if value is really a function *)
                     ignore
                       (L.build_call check_func_func
                          [| func; L.const_int i8_t arg_size |]
                          "" builder);
+                    (* prepare arguments *)
                     let builder, args =
                       Utils.fold_map (build_unnamed_expr func st) builder args
                     in
-                    let args = Array.of_list args in
-                    let function_type =
-                      L.function_type value_ptr_type
-                        (Array.make arg_size value_ptr_type)
+                    (* access link *)
+                    let deps = func_get_al func in
+                    let access_link_type =
+                      L.struct_type context
+                        (Array.make (List.length deps) value_ptr_type)
                     in
+                    let access_link =
+                      L.build_alloca access_link_type "access_link" builder
+                    in
+                    List.iteri
+                      (fun index dep ->
+                        let field =
+                          L.build_struct_gep access_link index
+                            "access_link_field" builder
+                        in
+                        ignore
+                          (L.build_store
+                             ( match Symtable.find dep st with
+                             | Some value -> value
+                             | None ->
+                                 raise
+                                   (Failure
+                                      "Can't find variable for access link") )
+                             field builder))
+                      deps;
+                    let args = Array.of_list (access_link :: args) in
+                    (* bitcast the value to a function for calling *)
+                    let function_type = function_type arg_size deps in
                     let casted =
                       L.build_bitcast func
                         (L.pointer_type value_type_func)
@@ -228,6 +337,7 @@ let translate (stmts : stmt list) =
                         (L.pointer_type function_type)
                         "func" builder
                     in
+                    (* call the function *)
                     let ret = L.build_call func args "ret" builder in
                     (builder, ret)
                 (* Builtin functions *)
@@ -242,35 +352,82 @@ let translate (stmts : stmt list) =
                     (builder, ret)
                 | _ -> raise (Failure "Unexpected function type") )
             | None -> raise (Failure ("Function " ^ name ^ " is not defined")) )
-        | _ -> raise (Failure "Not implemented. Function call should either be an ID or Lambda ") )
+        | _ ->
+            raise
+              (Failure
+                 "Not implemented. Function call should either be an ID or \
+                  Lambda ") )
     | Lambda (args, body) ->
         let arg_size = List.length args in
-        let func_type =
-          L.function_type value_ptr_type (Array.make arg_size value_ptr_type)
-        in
+        let deps = collect_dependency body args in
+        let func_type = function_type arg_size deps in
         let func = L.define_function "lambda" func_type the_module in
         let func_ptr = L.build_bitcast func i8_ptr_t "func_ptr" builder in
-        let new_st = Symtable.push st in
+        (* The symbol table of the new function is built from "builtin"
+           instead of inherited from the parent *)
+        let new_st = Symtable.push builtins in
+        (* Add arguments to the symbol table *)
         let new_st =
           List.fold_left2
-            (fun st arg arg_name -> Symtable.add arg_name arg st)
+            (fun st arg arg_name ->
+              match arg_name with
+              | "" -> st (* ignore the first argument *)
+              | _ -> Symtable.add arg_name arg st)
             new_st
             (Array.to_list (L.params func))
-            args
+            (* The first argument of a function is the
+               access link, and it will not be added to
+               the symbol table *)
+            ("" :: args)
         in
-        build_func_body func new_st body;
-        ( builder,
+        (* Build the function body *)
+        build_func_body deps func new_st body;
+        (* Wrap the function in a value_type instance *)
+        let func_value =
           build_literal "lambda" type_func value_type_func
             [
               (1, func_ptr);
               (2, L.const_int i8_t arg_size);
               (3, L.const_int i8_t arg_size);
             ]
-            builder )
-    | _ -> raise (Failure "Not implemented. This expr cannot be converted to IR code")
-  and build_func_body func st stmts = build_func_body_ false func st stmts
-  and build_func_body_ (is_main : bool) (func : L.llvalue) (st : symbol_table)
-      (stmts : stmt list) : unit =
+            builder
+        in
+        func_set_al func_value deps;
+        (builder, func_value)
+    | _ ->
+        raise
+          (Failure "Not implemented. This expr cannot be converted to IR code")
+  and build_func_body (deps : string list) (func : L.llvalue)
+      (st : symbol_table) (stmts : stmt list) : unit =
+    let builder = L.builder_at_end context (L.entry_block func) in
+    (* The first argument is always access link *)
+    let access_link = (L.params func).(0) in
+    let st =
+      (* Reimport referenced variables into the symbol table from the
+         access link *)
+      List.fold_left
+        (fun st var ->
+          let index, name = var in
+          let field_ptr =
+            L.build_struct_gep access_link index "outer_var_ptr" builder
+          in
+          let field = L.build_load field_ptr "outer_var" builder in
+          Symtable.add name field st)
+        st
+        (List.mapi (fun i name -> (i, name)) deps)
+    in
+    (* Apply "build_stmt" to each statement in the function body *)
+    let _, builder, value =
+      List.fold_left
+        (fun ctx stmt ->
+          let st, builder, value = ctx in
+          build_stmt func st builder stmt)
+        (st, builder, L.const_null value_ptr_type)
+        stmts
+    in
+    ignore (L.build_ret value builder)
+  and build_main_func_body (func : L.llvalue) (st : symbol_table)
+      (stmts : stmt list) =
     let builder = L.builder_at_end context (L.entry_block func) in
     let _, builder, value =
       List.fold_left
@@ -280,15 +437,12 @@ let translate (stmts : stmt list) =
         (st, builder, L.const_null value_ptr_type)
         stmts
     in
-    if is_main then ignore (L.build_ret (L.const_int i32_t 0) builder)
-    else ignore (L.build_ret value builder)
+    ignore (L.build_ret (L.const_int i32_t 0) builder)
   in
 
   let main_func =
     let main_func_type = L.function_type i32_t [||] in
     L.define_function "main" main_func_type the_module
   in
-  build_func_body_ true main_func
-    (Symtable.from [ ("display", display_func) ])
-    stmts;
+  build_main_func_body main_func builtins stmts;
   the_module
