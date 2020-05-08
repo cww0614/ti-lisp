@@ -34,6 +34,7 @@ struct value_t {
 
     struct {
       void *addr;
+      void *access_link;
       uint8_t min_arg, max_arg;
     } func_value;
   } value;

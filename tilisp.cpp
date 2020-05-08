@@ -28,9 +28,9 @@ void check_func(const value_t *value, uint8_t arg_num) {
     std::cout << "Function expects to take ";
 
     if (min == max) {
-      std::cout << min;
+      std::cout << (int)min;
     } else {
-      std::cout << min << " to " << max;
+      std::cout << (int)min << " to " << (int)max;
     }
 
     std::cout << " arguments, but got " << arg_num;

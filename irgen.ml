@@ -29,13 +29,13 @@ let translate (stmts : stmt list) =
     struct_
   in
 
-  (* The union is represented by a 16-byte char array (Assuming each
+  (* The union is represented by a 24-byte char array (Assuming each
      pointer is 8 bytes here). *)
   let value_type =
-    create_struct "value_t" context [| i8_t; L.array_type i8_t 16 |]
+    create_struct "value_t" context [| i8_t; L.array_type i8_t 24 |]
   in
   let value_ptr_type = L.pointer_type value_type in
-  let value_size = 24 in
+  let value_size = 32 in
 
   let type_integer = L.const_int i8_t 0
   and _type_char = L.const_int i8_t 1
@@ -59,27 +59,8 @@ let translate (stmts : stmt list) =
       [| i8_t; value_ptr_type; value_ptr_type |]
   in
   let value_type_func =
-    create_struct "value_t_func" context [| i8_t; i8_ptr_t; i8_t; i8_t |]
-  in
-
-  let func_access_link_md = L.mdkind_id context "tilisp.access_link.dep_num " in
-  let func_get_al (value : L.llvalue) =
-    match L.metadata value func_access_link_md with
-    | Some metadata ->
-        let values = L.get_mdnode_operands metadata in
-        Array.to_list
-          (Array.map
-             (fun v ->
-               match L.string_of_const v with
-               | Some string -> string
-               | None -> raise (Failure "Invalid metadata"))
-             values)
-    | None -> raise (Failure "No metadata is set for the value")
-  in
-  let func_set_al (value : L.llvalue) (deps : string list) =
-    L.set_metadata value func_access_link_md
-      (L.mdnode context
-         (Array.of_list (List.map (L.const_string context) deps)))
+    create_struct "value_t_func" context
+      [| i8_t; i8_ptr_t; i8_ptr_t; i8_t; i8_t |]
   in
 
   let display_func : L.llvalue =
@@ -187,12 +168,9 @@ let translate (stmts : stmt list) =
     List.sort_uniq String.compare outer_vars
   in
 
-  let function_type (arg_size : int) (deps : string list) : L.lltype =
+  let function_type (arg_size : int) : L.lltype =
     let args_types = Array.make (1 + arg_size) value_ptr_type in
-    let access_link_type =
-      L.pointer_type
-        (L.struct_type context (Array.make (List.length deps) value_ptr_type))
-    in
+    let access_link_type = i8_ptr_t in
     args_types.(0) <- access_link_type;
     L.function_type value_ptr_type args_types
   in
@@ -292,39 +270,25 @@ let translate (stmts : stmt list) =
                     let builder, args =
                       Utils.fold_map (build_unnamed_expr func st) builder args
                     in
-                    (* access link *)
-                    let deps = func_get_al func in
-                    let access_link_type =
-                      L.struct_type context
-                        (Array.make (List.length deps) value_ptr_type)
-                    in
-                    let access_link =
-                      L.build_alloca access_link_type "access_link" builder
-                    in
-                    List.iteri
-                      (fun index dep ->
-                        let field =
-                          L.build_struct_gep access_link index
-                            "access_link_field" builder
-                        in
-                        ignore
-                          (L.build_store
-                             ( match Symtable.find dep st with
-                             | Some value -> value
-                             | None ->
-                                 raise
-                                   (Failure
-                                      "Can't find variable for access link") )
-                             field builder))
-                      deps;
-                    let args = Array.of_list (access_link :: args) in
                     (* bitcast the value to a function for calling *)
-                    let function_type = function_type arg_size deps in
+                    let function_type = function_type arg_size in
                     let casted =
                       L.build_bitcast func
                         (L.pointer_type value_type_func)
                         "func_value" builder
                     in
+                    (* access link *)
+                    let access_link =
+                      let access_link_ptr =
+                        L.build_struct_gep casted 2 "access_link_ptr" builder
+                      in
+                      let access_link =
+                        L.build_load access_link_ptr "access_link" builder
+                      in
+                      access_link
+                    in
+                    let args = Array.of_list (access_link :: args) in
+                    (* call the function pointer *)
                     let func_ptr_ptr =
                       L.build_struct_gep casted 1 "func_ptr_ptr" builder
                     in
@@ -337,7 +301,6 @@ let translate (stmts : stmt list) =
                         (L.pointer_type function_type)
                         "func" builder
                     in
-                    (* call the function *)
                     let ret = L.build_call func args "ret" builder in
                     (builder, ret)
                 (* Builtin functions *)
@@ -360,12 +323,33 @@ let translate (stmts : stmt list) =
     | Lambda (args, body) ->
         let arg_size = List.length args in
         let deps = collect_dependency body args in
-        let func_type = function_type arg_size deps in
+        let func_type = function_type arg_size in
         let func = L.define_function "lambda" func_type the_module in
         let func_ptr = L.build_bitcast func i8_ptr_t "func_ptr" builder in
         (* The symbol table of the new function is built from "builtin"
            instead of inherited from the parent *)
         let new_st = Symtable.push builtins in
+        (* set up access link *)
+        let access_link_type =
+          L.struct_type context (Array.make (List.length deps) value_ptr_type)
+        in
+        let access_link =
+          L.build_alloca access_link_type "access_link" builder
+        in
+
+        List.iteri
+          (fun index dep ->
+            let field =
+              L.build_struct_gep access_link index "access_link_field" builder
+            in
+            ignore
+              (L.build_store
+                 ( match Symtable.find dep st with
+                 | Some value -> value
+                 | None -> raise (Failure "Can't find variable for access link")
+                 )
+                 field builder))
+          deps;
         (* Add arguments to the symbol table *)
         let new_st =
           List.fold_left2
@@ -383,16 +367,19 @@ let translate (stmts : stmt list) =
         (* Build the function body *)
         build_func_body deps func new_st body;
         (* Wrap the function in a value_type instance *)
+        let access_link_void_ptr =
+          L.build_bitcast access_link i8_ptr_t "access_link_void_ptr" builder
+        in
         let func_value =
           build_literal "lambda" type_func value_type_func
             [
               (1, func_ptr);
-              (2, L.const_int i8_t arg_size);
+              (2, access_link_void_ptr);
               (3, L.const_int i8_t arg_size);
+              (4, L.const_int i8_t arg_size);
             ]
             builder
         in
-        func_set_al func_value deps;
         (builder, func_value)
     | _ ->
         raise
@@ -401,7 +388,15 @@ let translate (stmts : stmt list) =
       (st : symbol_table) (stmts : stmt list) : unit =
     let builder = L.builder_at_end context (L.entry_block func) in
     (* The first argument is always access link *)
-    let access_link = (L.params func).(0) in
+    let access_link_void_ptr = (L.params func).(0) in
+    let access_link_type =
+      L.struct_type context (Array.make (List.length deps) value_ptr_type)
+    in
+    let access_link =
+      L.build_bitcast access_link_void_ptr
+        (L.pointer_type access_link_type)
+        "access_link" builder
+    in
     let st =
       (* Reimport referenced variables into the symbol table from the
          access link *)
