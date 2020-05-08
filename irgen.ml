@@ -40,7 +40,7 @@ let translate (stmts : stmt list) =
   let type_integer = L.const_int i64_t 0
   and type_char = L.const_int i64_t 1
   and type_string = L.const_int i64_t 2
-  and _type_cons = L.const_int i64_t 3
+  and type_cons = L.const_int i64_t 3
   and type_bool = L.const_int i64_t 4
   and type_func = L.const_int i64_t 5 in
 
@@ -56,7 +56,7 @@ let translate (stmts : stmt list) =
   let value_type_string =
     create_struct "value_t_string" context [| i64_t; i8_ptr_t; i64_t |]
   in
-  let _value_type_cons =
+  let value_type_cons =
     create_struct "value_t_cons" context
       [| i64_t; value_ptr_type; value_ptr_type |]
   in
@@ -485,6 +485,12 @@ let translate (stmts : stmt list) =
             builder
         in
         (builder, func_value)
+    | Cons (hd, tl) ->
+        let builder, car = build_expr the_func "car" st builder hd in
+        let builder, cdr = build_expr the_func "cdr" st builder tl in
+        ( builder,
+          build_literal name type_cons value_type_cons [ (1, car); (2, cdr) ]
+            builder )
     | Nil -> (builder, L.const_null value_ptr_type)
     | _ ->
         raise
