@@ -13,9 +13,10 @@ testing.native: $(TEST_FILES)
 
 tilisp.o: tilisp.h tilisp.cpp helper.cpp helper.h
 	g++ tilisp.cpp -c -o tilisp.o
+	g++ helper.cpp -c -o helper.o
 
-libtilisp.a: tilisp.o
-	ar -crs libtilisp.a tilisp.o
+libtilisp.a: tilisp.o helper.o
+	ar -crs libtilisp.a tilisp.o helper.o
 	ranlib libtilisp.a
 
 test: testing.native libtilisp.a
