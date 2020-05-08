@@ -56,8 +56,10 @@ let _ =
           let out = open_out "llvm.out" in
           fprintf out "%s\n" (Llvm.string_of_llmodule (Irgen.translate program));
           close_out out;
-          if command "llc -relocation-model=pic llvm.out" != 0 then
+          if command "opt -S -O2 llvm.out -o llvm.optimized.out" != 0 then
+            raise (Failure "opt: non-zero exit code")
+          else if command "llc -relocation-model=pic llvm.optimized.out" != 0 then
             raise (Failure "llc: non-zero exit code")
-          else if command "g++ llvm.out.s -L./ -ltilisp -o a.out" != 0 then
+          else if command "g++ llvm.optimized.out.s -L./ -ltilisp -o a.out" != 0 then
             raise (Failure "g++: non-zero exit code")
           else () )
