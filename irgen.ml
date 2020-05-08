@@ -73,6 +73,10 @@ let translate (stmts : stmt list) =
     let display_t = L.function_type value_ptr_type [| value_ptr_type |] in
     L.declare_function "display" display_t the_module
   in
+  let add_func : L.llvalue =
+      let add_t = L.function_type value_ptr_type [| value_ptr_type; value_ptr_type |] in
+    L.declare_function "cpp_add" add_t the_module
+  in
 
   let check_type_func : L.llvalue =
     let func_type = L.function_type void_t [| value_ptr_type; i8_t |] in
@@ -86,11 +90,14 @@ let translate (stmts : stmt list) =
 
   let build_literal name type_value ltype values builder =
     let alloca = L.build_alloca value_type name builder in
+    (* type_field is the tag in the llvm struct member*)
     let type_field = L.build_struct_gep alloca 0 "value_type" builder in
     ignore (L.build_store type_value type_field builder);
     let casted =
+        (* recasting alloca struct*)
       L.build_bitcast alloca (L.pointer_type ltype) "content" builder
     in
+        (* writing the value to the struct, which is wrapped inside the "values" tuple *)
     List.iter
       (function
         | idx, value ->
@@ -121,7 +128,7 @@ let translate (stmts : stmt list) =
     | None -> ignore (instr builder)
   in
 
-  let builtins = Symtable.from [ ("display", display_func) ] in
+  let builtins = Symtable.from [ ("display", display_func); ("+", add_func) ] in
 
   (* Find which variables in outer function are used *)
   let rec collect_dependency (stmts : stmt list) (args : string list) :
