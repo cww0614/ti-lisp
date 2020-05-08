@@ -1,0 +1,3 @@
+(define my_var 999)
+
+(display my_var)

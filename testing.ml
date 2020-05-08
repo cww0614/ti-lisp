@@ -3,50 +3,52 @@ module S = String;;
 
 (* List of tuple (testcase description, testname, arguments for tilisp) *)
 let ls_testcases = [
-  ("Test case: comments & identifier", "scanner_comments_id", "-a");
+  ("[scanner] comments & identifier", "scanner_comments_id", "-a");
 
-  ("Test case: unpaired bracket", "parser_unpaired_bracket", "-a");
+  ("[parser] unpaired bracket", "parser_unpaired_bracket", "-a");
 
-  ("Test case: incomplete string", "parser_invalid_string", "-a");
+  ("[parser] incomplete string", "parser_invalid_string", "-a");
 
-  ("Test case: parsing quote", "parser_quote", "-a");
+  ("[parser] parsing quote", "parser_quote", "-a");
 
-  ("Test case: parsing char literal", "parser_char", "-a");
+  ("[parser] parsing char literal", "parser_char", "-a");
 
-  ("Test case: undefined variable", "semant_undefined_variable", "-s");
+  ("[semant] undefined variable", "semant_undefined_variable", "-s");
 
-  ("Test case: simple list", "parser_simple_list", "-a");
+  ("[parser] simple list", "parser_simple_list", "-a");
 
-  ("Test case: parse expansion in macro", "parser_macro_expansion", "-a");
+  ("[macro] parse expansion in macro", "parser_macro_expansion", "-a");
 
-  ("Test case: macro definition", "macro_set_nil", "-s");
+  ("[macro] macro definition", "macro_set_nil", "-s");
 
-  ("Test case: macro multiple rules", "macro_incre", "-s");
+  ("[macro] multiple rules", "macro_incre", "-s");
 
-  ("Test case: macro with reserved keywords", "macro_reserved_keywords", "-s");
+  ("[macro] with reserved keywords", "macro_reserved_keywords", "-s");
 
-  ("Test case: semantic, built-in functions", "semant_builtin", "-s");
+  ("[semant], built-in functions", "semant_builtin", "-s");
 
-  ("Test case: semantic, self-quoted literal", "semant_self_quoted", "-s");
+  ("[semant], self-quoted literal", "semant_self_quoted", "-s");
 
   (* Test SAST for fib. *)
-  ("Test case: (fib.tisp, SAST)" , "fib", "-s");
+  ("[more] (fib.tisp, SAST)" , "fib", "-s");
   
   (* Test for nested inner defines *)
-  ("Test case: (inner_define_valid.tisp, SAST)", "inner_define_valid", "-s");
+  ("[semant] inner_define_valid.tisp, SAST", "inner_define_valid", "-s");
 
   (* Test for nested inner defines *)
-  ("Test case: (inner_define_invalid.tisp, SAST)", "inner_define_invalid", "-s");
+  ("[semant] inner_define_invalid.tisp, SAST", "inner_define_invalid", "-s");
 
   (* Duplicate names in a let bindings:
   unlike Scheme, an error would be thrown out. *)
-  ("Test case: (duplicate names in one let binding)", "let_duplications", "-s");
+  ("[semant] duplicate names in one let binding", "let_duplications", "-s");
 
   (* Multi-level nested 'define' *)
-  ("Test case: Multi-level nested 'define' ", "inner_define_multilevel", "-s");
+  ("[semant] Multi-level nested 'define' ", "inner_define_multilevel", "-s");
 
   (* Duplcated parameters in lambda expression *)
-  ("Test case: Duplcated parameters in lambda expression", "lambda_duplications", "-s");
+  ("[semant] Duplcated parameters in lambda expression", "lambda_duplications", "-s");
+
+  ("[irg] built-in function call.", "irg_builtin_func", "-l");
 
 ] in
 
@@ -54,6 +56,7 @@ let read_lines ic : string list =
   let try_read () =
     try Some (input_line ic) with End_of_file -> None in
   let rec loop acc = match try_read () with
+    | Some s when s = "" -> loop acc
     | Some s -> loop (s :: acc)
     | None -> close_in ic; List.rev acc in
   loop [] in
@@ -92,12 +95,18 @@ let single_test (testcase : (string * string * string)) =
   let ic_expected = open_in file_expected in 
   let ls_expected = read_lines ic_expected in
   let _ = ignore(Unix.close_process_full (output, inp, errors));
-  if (List.length ls_expected) = 0 
-    then raise (Failure ("Empty expected output file: "^test_name)) in
-  if (compare_list ls_actual ls_expected) then
-  print_endline (title^" [passed].") else (print_endline (title^" [failed].");
-  print_string "Expeceted:\n"; List.iter print_endline ls_expected;
-  print_string "Actual:\n"; List.iter print_endline ls_actual) in
+  if (List.length ls_actual) = 0 then
+    raise (Failure ("Empty output file: "^test_name)) in
+  if (List.length ls_expected) = 0 then begin
+    print_endline ("Test case: "^title^" [unknown expected output]");
+    print_string "Actual:\n"; List.iter print_endline ls_actual
+  end else if (compare_list ls_actual ls_expected) then
+    print_endline ("Test case: "^title^" [passed].")
+  else begin
+      print_endline ("Test case: "^title^" [failed].");
+      print_string "Expeceted:\n"; List.iter print_endline ls_expected;
+      print_string "Actual:\n"; List.iter print_endline ls_actual
+  end in
 
 List.iter single_test ls_testcases; 
 "Governor Cuomo: we need more testing!"

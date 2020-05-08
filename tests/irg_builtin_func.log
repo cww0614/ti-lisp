@@ -1,0 +1,25 @@
+; ModuleID = 'ti-lisp'
+source_filename = "ti-lisp"
+%value_t = type { i64, [24 x i8] }
+%value_t_int = type { i64, i64 }
+declare %value_t* @display(%value_t*)
+declare void @check_type(%value_t*, i8)
+declare void @check_func(%value_t*, i8)
+define i32 @main() {
+entry:
+  %my_var = alloca %value_t
+  %unnamed = alloca %value_t
+  %value_type = getelementptr inbounds %value_t, %value_t* %unnamed, i32 0, i32 0
+  store i64 0, i64* %value_type
+  %content = bitcast %value_t* %unnamed to %value_t_int*
+  %field = getelementptr inbounds %value_t_int, %value_t_int* %content, i32 0, i32 1
+  store i64 999, i64* %field
+  %memcpy_dest = bitcast %value_t* %my_var to i8*
+  %memcpy_src = bitcast %value_t* %unnamed to i8*
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %memcpy_dest, i8* %memcpy_src, i64 32, i1 false)
+  %ret = call %value_t* @display(%value_t* %my_var)
+  ret i32 0
+}
+; Function Attrs: argmemonly nounwind
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1) #0
+attributes #0 = { argmemonly nounwind }
