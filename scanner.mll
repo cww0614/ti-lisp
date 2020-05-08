@@ -44,4 +44,5 @@ and read_string buf = parse
 
 and comment = parse
  ['\n' '\r'] { token lexbuf }
+| eof {token lexbuf}
 | _ { comment lexbuf }
