@@ -82,6 +82,12 @@ let builtin_macros : symbol_table =
                    (let* (more ...)
                      body ...)))) |}
          );
+         ( "let",
+           {| (syntax-rules ()
+                ((_ tag ((name val) ...) body ...)
+                 ((let ((tag (lambda (name ...) body ...)))
+                   tag) val ...))) |}
+         );
        ])
 
 let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
@@ -111,8 +117,41 @@ let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
         | Id "_", _ -> Some map
         | Id id, v when not (List.mem id literals) ->
             Some (StringMap.add id v map)
-        | Cons (Id id, Cons (Expansion, Nil)), (Cons (hd2, tl2) as rest_form) ->
+        | Cons (Id id, Cons (Expansion, Nil)), (Cons (_, _) as rest_form) ->
             Some (StringMap.add id rest_form map)
+        | ( Cons ((Cons (_, _) as cons), Cons (Expansion, Nil)),
+            (Cons (Cons (_, _), _) as rest_form) ) ->
+            let rec match_destruct_binding (pattern : expr) (expr : expr) :
+                expr list StringMap.t =
+              match expr with
+              | Cons (hd, tl) ->
+                  let hd_m =
+                    match
+                      match_rule_iter StringMap.empty literals pattern hd
+                    with
+                    | Some map -> map
+                    | None ->
+                        raise (Failure "Invalid destructing match pattern")
+                  in
+                  let tl_m = match_destruct_binding pattern tl in
+                  StringMap.merge
+                    (fun key v1 v2 ->
+                      match v1 with
+                      | Some v ->
+                          let v2 = match v2 with Some v -> v | None -> [] in
+                          Some (v :: v2)
+                      | None -> v2)
+                    hd_m tl_m
+              | Nil -> StringMap.empty
+              | _ -> raise (Failure "Invalid destructing match pattern")
+            in
+            let binding_map = match_destruct_binding cons rest_form in
+            let map =
+              StringMap.fold
+                (fun id value map -> StringMap.add id (list_to_cons value) map)
+                binding_map map
+            in
+            Some map
         | Cons (hd1, tl1), Cons (hd2, tl2) -> (
             match match_rule_iter map literals hd1 hd2 with
             | Some map -> match_rule_iter map literals tl1 tl2

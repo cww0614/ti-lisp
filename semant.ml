@@ -20,7 +20,6 @@ let check : A.expr list -> stmt list =
 
   let rec check_stmt_block (symbol_table : symbol_table) :
       A.expr -> symbol_table * value_type * stmt list = function
-    | A.Nil -> (symbol_table, Value, [])
     | A.Cons (hd, A.Nil) ->
         let symbol_table, stmt_type, stmt = check_stmt symbol_table hd in
         (symbol_table, stmt_type, [ stmt ])
@@ -57,7 +56,11 @@ let check : A.expr list -> stmt list =
     function
     | A.Id name -> (
         match name with
-        | _ when Symtable.mem name symbol_table -> (Value, Id name)
+        | _ when Symtable.mem name symbol_table ->
+            ( ( match Symtable.find name symbol_table with
+              | Some tp -> tp
+              | None -> raise (Failure "Invariant violation") ),
+              Id name )
         | "true" -> (Value, BoolLit true)
         | "false" -> (Value, BoolLit false)
         | _ -> raise (Failure ("Undefined variable " ^ name)) )
@@ -109,12 +112,18 @@ let check : A.expr list -> stmt list =
             | _ -> raise (Failure "Invalid if expression") )
         | A.Id "let" -> (
             (* check if the bindings in the let are well formed *)
-            let rec check_let_bindings = function
+            let rec convert_let_bindings = function
               | A.Nil -> []
               | A.Cons (A.Cons (A.Id name, A.Cons (value, A.Nil)), rest) ->
-                  let value_type, expr = check_expr symbol_table value in
-                  (name, value_type, expr) :: check_let_bindings rest
+                  (name, value) :: convert_let_bindings rest
               | _ -> raise (Failure "Invalid let binding list")
+            in
+
+            let rec check_let_bindings symbol_table =
+              List.map (fun binding ->
+                  let name, value = binding in
+                  let value_type, expr = check_expr symbol_table value in
+                  (name, value_type, expr))
             in
 
             (* check for duplicates in let bindings *)
@@ -134,20 +143,31 @@ let check : A.expr list -> stmt list =
 
             match args with
             | A.Cons (bindings, body) ->
-                let bindings = check_let_bindings bindings in
+                let bindings = convert_let_bindings bindings in
+                (* First fill Any for every variable *)
+                let new_symbol_table =
+                  List.fold_left
+                    (fun symbol_table binding ->
+                      let name, _ = binding in
+                      Symtable.add name Any symbol_table)
+                    (Symtable.push symbol_table)
+                    bindings
+                in
+
+                let bindings = check_let_bindings new_symbol_table bindings in
+                (* Then fill conrete types for variables *)
+                let new_symbol_table =
+                  List.fold_left
+                    (fun symbol_table binding ->
+                      let name, tp, _ = binding in
+                      Symtable.add name tp symbol_table)
+                    new_symbol_table bindings
+                in
 
                 (* check for let duplicates *)
                 let map = StringMap.empty in
                 let _ = check_let_duplicates bindings map in
 
-                let new_symbol_table =
-                  List.fold_left
-                    (fun symbol_table binding ->
-                      let name, value_type, _ = binding in
-                      Symtable.add name value_type symbol_table)
-                    (Symtable.push symbol_table)
-                    bindings
-                in
                 let _, stmt_type, stmts =
                   check_stmt_block new_symbol_table body
                 in

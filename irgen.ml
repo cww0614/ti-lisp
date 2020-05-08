@@ -155,6 +155,23 @@ let translate (stmts : stmt list) =
           in
           let _, outer_vars = collect_dep_stmts st outer_vars body in
           outer_vars
+      | Let (bindings, body) ->
+          let st =
+            List.fold_left
+              (fun st binding ->
+                let name, _ = binding in
+                Symtable.add name () st)
+              st bindings
+          in
+          let outer_vars =
+            List.fold_left
+              (fun outer_vars binding ->
+                let _, expr = binding in
+                collect_dep_expr st outer_vars expr)
+              outer_vars bindings
+          in
+          let _, outer_vars = collect_dep_stmts st outer_vars body in
+          outer_vars
       | FunCall (func, args) ->
           let outer_vars = collect_dep_expr st outer_vars func in
           List.fold_left (collect_dep_expr st) outer_vars args
@@ -205,9 +222,17 @@ let translate (stmts : stmt list) =
     | _ -> v
   in
 
-  let rec build_stmt (func : L.llvalue) (st : symbol_table)
-      (builder : L.llbuilder) : stmt -> symbol_table * L.llbuilder * L.llvalue =
-    function
+  let rec build_stmt_block (func : L.llvalue) (st : symbol_table)
+      (builder : L.llbuilder) (stmts : stmt list) :
+      symbol_table * L.llbuilder * L.llvalue =
+    List.fold_left
+      (fun ctx stmt ->
+        let st, builder, value = ctx in
+        build_stmt func st builder stmt)
+      (st, builder, L.const_null value_ptr_type)
+      stmts
+  and build_stmt (func : L.llvalue) (st : symbol_table) (builder : L.llbuilder)
+      : stmt -> symbol_table * L.llbuilder * L.llvalue = function
     | Define (name, value) ->
         let alloca = L.build_alloca value_type name builder in
         let st = Symtable.add name alloca st in
@@ -241,6 +266,37 @@ let translate (stmts : stmt list) =
         match Symtable.find name st with
         | Some value -> (builder, maybe_wrap_builtin value builder)
         | None -> raise (Failure "Undefined variable") )
+    | Let (bindings, body) ->
+        (* This "let" is in fact "letrec" in standard scheme *)
+        let st =
+          List.fold_left
+            (fun st binding ->
+              let name, _ = binding in
+              Symtable.add name (L.build_alloca value_type name builder) st)
+            st bindings
+        in
+        let builder =
+          List.fold_left
+            (fun builder binding ->
+              let name, expr = binding in
+              let builder, value =
+                build_unnamed_expr the_func st builder expr
+              in
+              ignore
+                (build_memcpy value
+                   ( match Symtable.find name st with
+                   | Some pos -> pos
+                   | None ->
+                       raise
+                         (Failure
+                            "Programming Error: Let variables not in symbol \
+                             table") )
+                   builder);
+              builder)
+            builder bindings
+        in
+        let _, builder, value = build_stmt_block the_func st builder body in
+        (builder, value)
     | If (pred, then_c, else_c) ->
         let builder, pred_val = build_expr the_func "cmp" st builder pred in
         let casted =
@@ -410,6 +466,7 @@ let translate (stmts : stmt list) =
             builder
         in
         (builder, func_value)
+    | Nil -> (builder, L.const_null value_ptr_type)
     | _ ->
         raise
           (Failure "Not implemented. This expr cannot be converted to IR code")
@@ -440,27 +497,12 @@ let translate (stmts : stmt list) =
         st
         (List.mapi (fun i name -> (i, name)) deps)
     in
-    (* Apply "build_stmt" to each statement in the function body *)
-    let _, builder, value =
-      List.fold_left
-        (fun ctx stmt ->
-          let st, builder, value = ctx in
-          build_stmt func st builder stmt)
-        (st, builder, L.const_null value_ptr_type)
-        stmts
-    in
+    let _, builder, value = build_stmt_block func st builder stmts in
     ignore (L.build_ret value builder)
   and build_main_func_body (func : L.llvalue) (st : symbol_table)
       (stmts : stmt list) =
     let builder = L.builder_at_end context (L.entry_block func) in
-    let _, builder, value =
-      List.fold_left
-        (fun ctx stmt ->
-          let st, builder, value = ctx in
-          build_stmt func st builder stmt)
-        (st, builder, L.const_null value_ptr_type)
-        stmts
-    in
+    let _, builder, _ = build_stmt_block func st builder stmts in
     ignore (L.build_ret (L.const_int i32_t 0) builder)
   in
 

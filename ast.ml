@@ -27,6 +27,10 @@ let rec cons_to_list : expr -> expr list = function
   | Nil -> []
   | _ -> raise (Failure "cons_to_list called on non-list")
 
+let rec list_to_cons : expr list -> expr = function
+  | hd :: tl -> Cons (hd, list_to_cons tl)
+  | [] -> Nil
+
 (* Concat two cons list: cons_concat '(1 2) '(3 4) => '(1 2 3 4) *)
 let rec cons_concat (a : expr) (b : expr) : expr =
   match (a, b) with
