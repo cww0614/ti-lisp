@@ -42,7 +42,8 @@ let translate (stmts : stmt list) =
   and type_string = L.const_int i64_t 2
   and type_cons = L.const_int i64_t 3
   and type_bool = L.const_int i64_t 4
-  and type_func = L.const_int i64_t 5 in
+  and type_func = L.const_int i64_t 5
+  and type_symbol = L.const_int i64_t 6 in
 
   (* When using a value as specific type, the value_type will be
      bitcasted to one of theses types *)
@@ -63,6 +64,9 @@ let translate (stmts : stmt list) =
   let value_type_func =
     create_struct "value_t_func" context
       [| i64_t; i8_ptr_t; i8_ptr_t; i8_t; i8_t |]
+  in
+  let value_type_symbol =
+    create_struct "value_t_string" context [| i64_t; i8_ptr_t; i64_t |]
   in
 
   let display_func : L.llvalue =
@@ -278,6 +282,12 @@ let translate (stmts : stmt list) =
           build_literal name type_string value_type_string
             [ (1, str_ptr); (2, L.const_int i64_t (String.length str)) ]
             builder )
+    | Symbol name ->
+        let str_ptr = L.build_global_stringptr name "symbol_literal" builder in
+        ( builder,
+          build_literal name type_symbol value_type_symbol
+            [ (1, str_ptr); (2, L.const_int i64_t (String.length name)) ]
+            builder )
     | Id name -> (
         match Symtable.find name st with
         | Some value -> (builder, maybe_wrap_builtin value builder)
@@ -492,9 +502,6 @@ let translate (stmts : stmt list) =
           build_literal name type_cons value_type_cons [ (1, car); (2, cdr) ]
             builder )
     | Nil -> (builder, L.const_null value_ptr_type)
-    | _ ->
-        raise
-          (Failure "Not implemented. This expr cannot be converted to IR code")
   and build_func_body (deps : string list) (func : L.llvalue)
       (st : symbol_table) (stmts : stmt list) : unit =
     let builder = L.builder_at_end context (L.entry_block func) in

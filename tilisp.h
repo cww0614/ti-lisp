@@ -12,6 +12,7 @@ enum value_type {
   TYPE_CONS = 3,
   TYPE_BOOL = 4,
   TYPE_FUNC = 5,
+  TYPE_SYMBOL = 6,
 };
 
 struct value_t {
@@ -26,6 +27,11 @@ struct value_t {
       char *data;
       uint64_t size;
     } string_value;
+
+    struct {
+      char *data;
+      uint64_t size;
+    } symbol_value;
 
     struct {
       struct value_t *car;
