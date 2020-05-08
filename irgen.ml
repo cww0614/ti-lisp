@@ -242,7 +242,7 @@ let translate (stmts : stmt list) =
                     (builder, ret)
                 | _ -> raise (Failure "Unexpected function type") )
             | None -> raise (Failure ("Function " ^ name ^ " is not defined")) )
-        | _ -> raise (Failure "Not implemented") )
+        | _ -> raise (Failure "Not implemented. Function call should either be an ID or Lambda ") )
     | Lambda (args, body) ->
         let arg_size = List.length args in
         let func_type =
@@ -267,7 +267,7 @@ let translate (stmts : stmt list) =
               (3, L.const_int i8_t arg_size);
             ]
             builder )
-    | _ -> raise (Failure "Not implemented")
+    | _ -> raise (Failure "Not implemented. This expr cannot be converted to IR code")
   and build_func_body func st stmts = build_func_body_ false func st stmts
   and build_func_body_ (is_main : bool) (func : L.llvalue) (st : symbol_table)
       (stmts : stmt list) : unit =
