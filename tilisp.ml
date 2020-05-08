@@ -16,6 +16,7 @@ let _ =
       ("-m", Arg.Unit (set_action Mast), "Print the AST after macro expansion");
       ("-s", Arg.Unit (set_action Sast), "Print the SAST");
       ("-l", Arg.Unit (set_action IR), "Print the LLVM IR");
+      ("-e", Arg.Unit (set_action Exec), "Create executable from source code");
     ]
   in
   let usage_msg = "usage: ./tilisp.native [-a|-m|-s|-l] [file.tlsp]" in
