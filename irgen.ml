@@ -175,6 +175,36 @@ let translate (stmts : stmt list) =
     L.function_type value_ptr_type args_types
   in
 
+  (* Used to wrap builtin functions in a value_t, so that we can pass
+     them as higher order functions *)
+  let maybe_wrap_builtin (v : L.llvalue) (builder : L.llbuilder) : L.llvalue =
+    match L.classify_type (L.element_type (L.type_of v)) with
+    | L.TypeKind.Function ->
+        let params = L.params v in
+        if Array.length params = 0 then v
+        else
+          let first_param = params.(0) in
+          let fp_type = L.type_of first_param in
+          if
+            L.classify_type fp_type = L.TypeKind.Pointer
+            && L.classify_type (L.element_type fp_type) = L.TypeKind.Integer
+          then
+            (* Start wrapping *)
+            (* TODO: support vaarg builtin here *)
+            (* TODO: calculate args *)
+            let func_ptr = L.build_bitcast v i8_ptr_t "func_ptr" builder in
+            build_literal "builtin_wrapper" type_func value_type_func
+              [
+                (1, func_ptr);
+                (2, L.const_null i8_ptr_t);
+                (3, L.const_int i8_t 1);
+                (4, L.const_int i8_t 1);
+              ]
+              builder
+          else v
+    | _ -> v
+  in
+
   let rec build_stmt (func : L.llvalue) (st : symbol_table)
       (builder : L.llbuilder) : stmt -> symbol_table * L.llbuilder * L.llvalue =
     function
@@ -206,7 +236,7 @@ let translate (stmts : stmt list) =
             builder )
     | Id name -> (
         match Symtable.find name st with
-        | Some value -> (builder, value)
+        | Some value -> (builder, maybe_wrap_builtin value builder)
         | None -> raise (Failure "Undefined variable") )
     | If (pred, then_c, else_c) ->
         let builder, pred_val = build_expr the_func "cmp" st builder pred in
