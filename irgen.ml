@@ -155,6 +155,9 @@ let translate (stmts : stmt list) =
           in
           let _, outer_vars = collect_dep_stmts st outer_vars body in
           outer_vars
+      | Begin body ->
+          let _, outer_vars = collect_dep_stmts st outer_vars body in
+          outer_vars
       | Let (bindings, body) ->
           let st =
             List.fold_left
@@ -266,6 +269,9 @@ let translate (stmts : stmt list) =
         match Symtable.find name st with
         | Some value -> (builder, maybe_wrap_builtin value builder)
         | None -> raise (Failure "Undefined variable") )
+    | Begin body ->
+        let _, builder, value = build_stmt_block the_func st builder body in
+        (builder, value)
     | Let (bindings, body) ->
         (* This "let" is in fact "letrec" in standard scheme *)
         let st =
