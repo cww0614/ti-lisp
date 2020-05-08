@@ -39,7 +39,7 @@ let translate (stmts : stmt list) =
 
   let type_integer = L.const_int i64_t 0
   and type_char = L.const_int i64_t 1
-  and _type_string = L.const_int i64_t 2
+  and type_string = L.const_int i64_t 2
   and _type_cons = L.const_int i64_t 3
   and type_bool = L.const_int i64_t 4
   and type_func = L.const_int i64_t 5 in
@@ -53,7 +53,7 @@ let translate (stmts : stmt list) =
   let value_type_bool =
     create_struct "value_t_bool" context [| i64_t; i1_t |]
   in
-  let _value_type_string =
+  let value_type_string =
     create_struct "value_t_string" context [| i64_t; i8_ptr_t; i64_t |]
   in
   let _value_type_cons =
@@ -271,6 +271,12 @@ let translate (stmts : stmt list) =
         ( builder,
           build_literal name type_char value_type_char
             [ (1, L.const_int i8_t (Char.code v)) ]
+            builder )
+    | StrLit str ->
+        let str_ptr = L.build_global_stringptr str "string_literal" builder in
+        ( builder,
+          build_literal name type_string value_type_string
+            [ (1, str_ptr); (2, L.const_int i64_t (String.length str)) ]
             builder )
     | Id name -> (
         match Symtable.find name st with
