@@ -209,8 +209,11 @@ let translate (stmts : stmt list) =
       (builder : L.llbuilder) : stmt -> symbol_table * L.llbuilder * L.llvalue =
     function
     | Define (name, value) ->
-        let _, value = build_expr func name st builder value in
-        (Symtable.add name value st, builder, value)
+        let alloca = L.build_alloca value_type name builder in
+        let st = Symtable.add name alloca st in
+        let builder, value = build_unnamed_expr func st builder value in
+        ignore (build_memcpy value alloca builder);
+        (st, builder, value)
     | Set (name, value) ->
         let builder, value = build_unnamed_expr func st builder value in
         ignore
