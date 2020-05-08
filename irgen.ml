@@ -252,74 +252,70 @@ let translate (stmts : stmt list) =
         in
         (builder, phi)
     | FunCall (func, args) -> (
-        match func with
-        | Id name -> (
-            match Symtable.find name st with
-            | Some func -> (
-                (* Reference: https://groups.google.com/forum/#!topic/llvm-dev/_xy_3ZpQFLI *)
-                match L.classify_type (L.element_type (L.type_of func)) with
-                (* User defined functions *)
-                | L.TypeKind.Struct ->
-                    let arg_size = List.length args in
-                    (* check if value is really a function *)
-                    ignore
-                      (L.build_call check_func_func
-                         [| func; L.const_int i8_t arg_size |]
-                         "" builder);
-                    (* prepare arguments *)
-                    let builder, args =
-                      Utils.fold_map (build_unnamed_expr func st) builder args
-                    in
-                    (* bitcast the value to a function for calling *)
-                    let function_type = function_type arg_size in
-                    let casted =
-                      L.build_bitcast func
-                        (L.pointer_type value_type_func)
-                        "func_value" builder
-                    in
-                    (* access link *)
-                    let access_link =
-                      let access_link_ptr =
-                        L.build_struct_gep casted 2 "access_link_ptr" builder
-                      in
-                      let access_link =
-                        L.build_load access_link_ptr "access_link" builder
-                      in
-                      access_link
-                    in
-                    let args = Array.of_list (access_link :: args) in
-                    (* call the function pointer *)
-                    let func_ptr_ptr =
-                      L.build_struct_gep casted 1 "func_ptr_ptr" builder
-                    in
-                    let func_ptr =
-                      L.build_load func_ptr_ptr "func_ptr" builder
-                    in
-                    let func =
-                      L.build_inttoptr
-                        (L.build_ptrtoint func_ptr i64_t "func_ptr_val" builder)
-                        (L.pointer_type function_type)
-                        "func" builder
-                    in
-                    let ret = L.build_call func args "ret" builder in
-                    (builder, ret)
-                (* Builtin functions *)
-                | L.TypeKind.Function ->
-                    let builder, args =
-                      Utils.fold_map
-                        (build_unnamed_expr the_func st)
-                        builder args
-                    in
-                    let args = Array.of_list args in
-                    let ret = L.build_call func args "ret" builder in
-                    (builder, ret)
-                | _ -> raise (Failure "Unexpected function type") )
-            | None -> raise (Failure ("Function " ^ name ^ " is not defined")) )
-        | _ ->
-            raise
-              (Failure
-                 "Not implemented. Function call should either be an ID or \
-                  Lambda ") )
+        let builder, func =
+          match func with
+          | Id name -> (
+              match Symtable.find name st with
+              | Some func -> (builder, func)
+              | None -> raise (Failure ("Function " ^ name ^ " is not defined"))
+              )
+          | expr -> build_unnamed_expr the_func st builder expr
+        in
+
+        (* Reference: https://groups.google.com/forum/#!topic/llvm-dev/_xy_3ZpQFLI *)
+        match L.classify_type (L.element_type (L.type_of func)) with
+        (* User defined functions *)
+        | L.TypeKind.Struct ->
+            let arg_size = List.length args in
+            (* check if value is really a function *)
+            ignore
+              (L.build_call check_func_func
+                 [| func; L.const_int i8_t arg_size |]
+                 "" builder);
+            (* prepare arguments *)
+            let builder, args =
+              Utils.fold_map (build_unnamed_expr func st) builder args
+            in
+            (* bitcast the value to a function for calling *)
+            let function_type = function_type arg_size in
+            let casted =
+              L.build_bitcast func
+                (L.pointer_type value_type_func)
+                "func_value" builder
+            in
+            (* access link *)
+            let access_link =
+              let access_link_ptr =
+                L.build_struct_gep casted 2 "access_link_ptr" builder
+              in
+              let access_link =
+                L.build_load access_link_ptr "access_link" builder
+              in
+              access_link
+            in
+            let args = Array.of_list (access_link :: args) in
+            (* call the function pointer *)
+            let func_ptr_ptr =
+              L.build_struct_gep casted 1 "func_ptr_ptr" builder
+            in
+            let func_ptr = L.build_load func_ptr_ptr "func_ptr" builder in
+            let func =
+              L.build_inttoptr
+                (L.build_ptrtoint func_ptr i64_t "func_ptr_val" builder)
+                (L.pointer_type function_type)
+                "func" builder
+            in
+            let ret = L.build_call func args "ret" builder in
+            (builder, ret)
+        (* Builtin functions *)
+        | L.TypeKind.Function ->
+            let builder, args =
+              Utils.fold_map (build_unnamed_expr the_func st) builder args
+            in
+            let args = Array.of_list args in
+            let ret = L.build_call func args "ret" builder in
+            (builder, ret)
+        | _ -> raise (Failure "Unexpected function type") )
     | Lambda (args, body) ->
         let arg_size = List.length args in
         let deps = collect_dependency body args in
