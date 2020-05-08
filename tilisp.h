@@ -52,6 +52,9 @@ void check_type(const value_t *, uint8_t);
 
 void check_func(const value_t *, uint8_t);
 value_t *cpp_add(const value_t *value_1, const value_t *value_2);
+value_t *cpp_mult(const value_t *value_1, const value_t *value_2);
+value_t *cpp_div(const value_t *value_1, const value_t *value_2);
+value_t *cpp_subtract(const value_t *value_1, const value_t *value_2);
 
 }
 

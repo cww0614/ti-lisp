@@ -24,7 +24,62 @@ value_t *cpp_add(const value_t *value_1, const value_t *value_2) {
         return output;
     }
     else{
-        std::cout << "Not implemented" << std::endl;
+        std::cout << "+ not implemented for this type" << std::endl;
+        exit(1);
+    }
+    return nullptr;
+}
+
+value_t *cpp_mult(const value_t *value_1, const value_t *value_2) {
+    if (value_1->type == TYPE_INTEGER) {
+        /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
+        int tmp1 = (value_1->value).int_value;
+        int tmp2 = (value_2->value).int_value;
+
+        value_t *output = new value_t;
+        output->type = TYPE_INTEGER;
+        output->value.int_value = tmp1*tmp2;
+        return output;
+    }
+    else{
+        std::cout << "* not implemented for this type" << std::endl;
+        exit(1);
+    }
+    return nullptr;
+}
+
+value_t *cpp_div(const value_t *value_1, const value_t *value_2) {
+    if (value_1->type == TYPE_INTEGER) {
+        /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
+        int tmp1 = (value_1->value).int_value;
+        int tmp2 = (value_2->value).int_value;
+
+        value_t *output = new value_t;
+        output->type = TYPE_INTEGER;
+        output->value.int_value = tmp1 / tmp2;
+        return output;
+    }
+    else{
+        std::cout << "/ not implemented for this type" << std::endl;
+        exit(1);
+    }
+    return nullptr;
+}
+
+value_t *cpp_subtract(const value_t *value_1, const value_t *value_2) {
+    if (value_1->type == TYPE_INTEGER) {
+        /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
+        int tmp1 = (value_1->value).int_value;
+        int tmp2 = (value_2->value).int_value;
+
+        value_t *output = new value_t;
+        output->type = TYPE_INTEGER;
+        output->value.int_value = tmp1 - tmp2;
+        return output;
+    }
+    else{
+        std::cout << "/ not implemented for this type" << std::endl;
+        exit(1);
     }
     return nullptr;
 }

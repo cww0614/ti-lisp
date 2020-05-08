@@ -73,10 +73,11 @@ let translate (stmts : stmt list) =
     let display_t = L.function_type value_ptr_type [| value_ptr_type |] in
     L.declare_function "display" display_t the_module
   in
-  let add_func : L.llvalue =
-      let add_t = L.function_type value_ptr_type [| value_ptr_type; value_ptr_type |] in
-    L.declare_function "cpp_add" add_t the_module
-  in
+  let arth_t = L.function_type value_ptr_type [| value_ptr_type; value_ptr_type|] in 
+  let add_func : L.llvalue = L.declare_function "cpp_add" arth_t the_module in
+  let subtract_func : L.llvalue = L.declare_function "cpp_subtract" arth_t the_module in
+  let mult_func : L.llvalue = L.declare_function "cpp_mult" arth_t the_module in
+  let div_func : L.llvalue = L.declare_function "cpp_div" arth_t the_module in
 
   let check_type_func : L.llvalue =
     let func_type = L.function_type void_t [| value_ptr_type; i8_t |] in
@@ -128,7 +129,7 @@ let translate (stmts : stmt list) =
     | None -> ignore (instr builder)
   in
 
-  let builtins = Symtable.from [ ("display", display_func); ("+", add_func) ] in
+  let builtins = Symtable.from [ ("display", display_func); ("+", add_func); ("*", mult_func); ("/", div_func); ("-", subtract_func) ] in
 
   (* Find which variables in outer function are used *)
   let rec collect_dependency (stmts : stmt list) (args : string list) :

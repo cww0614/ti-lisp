@@ -1,1 +1,1 @@
-(display (+ 20 2))
+(display (- 20 2))
