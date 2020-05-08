@@ -32,35 +32,37 @@ let translate (stmts : stmt list) =
   (* The union is represented by a 24-byte char array (Assuming each
      pointer is 8 bytes here). *)
   let value_type =
-    create_struct "value_t" context [| i8_t; L.array_type i8_t 24 |]
+    create_struct "value_t" context [| i64_t; L.array_type i8_t 24 |]
   in
   let value_ptr_type = L.pointer_type value_type in
   let value_size = 32 in
 
-  let type_integer = L.const_int i8_t 0
-  and _type_char = L.const_int i8_t 1
-  and _type_string = L.const_int i8_t 2
-  and _type_cons = L.const_int i8_t 3
-  and type_bool = L.const_int i8_t 4
-  and type_func = L.const_int i8_t 5 in
+  let type_integer = L.const_int i64_t 0
+  and type_char = L.const_int i64_t 1
+  and _type_string = L.const_int i64_t 2
+  and _type_cons = L.const_int i64_t 3
+  and type_bool = L.const_int i64_t 4
+  and type_func = L.const_int i64_t 5 in
 
   (* When using a value as specific type, the value_type will be
      bitcasted to one of theses types *)
-  let value_type_int = create_struct "value_t_int" context [| i8_t; i64_t |] in
-  let _value_type_char =
-    create_struct "value_t_char" context [| i8_t; i8_t |]
+  let value_type_int = create_struct "value_t_int" context [| i64_t; i64_t |] in
+  let value_type_char =
+    create_struct "value_t_char" context [| i64_t; i8_t |]
   in
-  let value_type_bool = create_struct "value_t_bool" context [| i8_t; i1_t |] in
+  let value_type_bool =
+    create_struct "value_t_bool" context [| i64_t; i1_t |]
+  in
   let _value_type_string =
-    create_struct "value_t_string" context [| i8_t; i8_ptr_t; i64_t |]
+    create_struct "value_t_string" context [| i64_t; i8_ptr_t; i64_t |]
   in
   let _value_type_cons =
     create_struct "value_t_cons" context
-      [| i8_t; value_ptr_type; value_ptr_type |]
+      [| i64_t; value_ptr_type; value_ptr_type |]
   in
   let value_type_func =
     create_struct "value_t_func" context
-      [| i8_t; i8_ptr_t; i8_ptr_t; i8_t; i8_t |]
+      [| i64_t; i8_ptr_t; i8_ptr_t; i8_t; i8_t |]
   in
 
   let display_func : L.llvalue =
@@ -264,6 +266,11 @@ let translate (stmts : stmt list) =
         ( builder,
           build_literal name type_bool value_type_bool
             [ (1, L.const_int i1_t (if v then 1 else 0)) ]
+            builder )
+    | CharLit v ->
+        ( builder,
+          build_literal name type_char value_type_char
+            [ (1, L.const_int i8_t (Char.code v)) ]
             builder )
     | Id name -> (
         match Symtable.find name st with

@@ -15,7 +15,7 @@ enum value_type {
 };
 
 struct value_t {
-  uint8_t type;
+  uint64_t type;
 
   union {
     int64_t int_value;
