@@ -4,12 +4,23 @@
 #include "helper.h"
 
 value_t *display(const value_t *value) {
-  if (value->type == TYPE_INTEGER) {
+  switch (value->type)
+  {
+  case TYPE_INTEGER:
     std::cout << value->value.int_value << std::endl;
-  } else if (value->type == TYPE_STRING) {
+    break;
+  case TYPE_STRING:
     std::cout << value->value.string_value.data << std::endl;
-  } else if (value->type == TYPE_CHAR){
+    break;
+  case TYPE_CHAR:
     std::cout << value->value.char_value << std::endl;
+    break;
+  case TYPE_BOOL:
+    std::cout << (value->value.bool_value? "true": "false") << std::endl;
+    break;
+  default:
+    std::cout << "'display' not implemented for this type." << std::endl;
+    break;
   }
   return nullptr;
 }
@@ -86,6 +97,32 @@ value_t *cpp_subtract(const value_t *value_1, const value_t *value_2) {
         exit(1);
     }
     return nullptr;
+}
+
+value_t *cpp_equal(const value_t *value_1, const value_t *value_2) {
+  value_t *res = new value_t;
+  res->type = TYPE_BOOL;
+  switch (value_1->type){
+    case TYPE_INTEGER:
+    {      
+      int v1int = (value_1->value).int_value;
+      int v2int = (value_2->value).int_value;
+      res->value.bool_value = (v1int == v2int);
+    }
+      break;
+    case TYPE_BOOL:
+    {
+      bool v1bool = (value_1->value).bool_value;
+      bool v2bool = (value_2->value).bool_value;
+      res->value.bool_value = (v1bool == v2bool);
+    }
+      break;
+    default:
+      std::cout << "'=' not implemented for this type" << std::endl;
+      res = nullptr;
+      exit(1);
+  }
+  return res;
 }
 
 void check_type(const value_t *value, uint8_t expected_type) {

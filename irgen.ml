@@ -1,6 +1,6 @@
-module L = Llvm
-module A = Ast
-open Sast
+module L = Llvm;;
+module A = Ast;;
+open Sast;;
 
 (* References:
 
@@ -78,6 +78,7 @@ let translate (stmts : stmt list) =
   let subtract_func : L.llvalue = L.declare_function "cpp_subtract" arth_t the_module in
   let mult_func : L.llvalue = L.declare_function "cpp_mult" arth_t the_module in
   let div_func : L.llvalue = L.declare_function "cpp_div" arth_t the_module in
+  let equal_func : L.llvalue = L.declare_function "cpp_equal" arth_t the_module in
 
   let check_type_func : L.llvalue =
     let func_type = L.function_type void_t [| value_ptr_type; i8_t |] in
@@ -129,7 +130,11 @@ let translate (stmts : stmt list) =
     | None -> ignore (instr builder)
   in
 
-  let builtins = Symtable.from [ ("display", display_func); ("+", add_func); ("*", mult_func); ("/", div_func); ("-", subtract_func) ] in
+  let builtins = Symtable.from [
+    ("display", display_func);
+    ("+", add_func); ("*", mult_func); ("/", div_func); ("-", subtract_func);
+    ("=", equal_func);
+    ] in
 
   (* Find which variables in outer function are used *)
   let rec collect_dependency (stmts : stmt list) (args : string list) :

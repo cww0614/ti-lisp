@@ -56,6 +56,8 @@ value_t *cpp_mult(const value_t *value_1, const value_t *value_2);
 value_t *cpp_div(const value_t *value_1, const value_t *value_2);
 value_t *cpp_subtract(const value_t *value_1, const value_t *value_2);
 
+value_t *cpp_equal(const value_t *value_1, const value_t *value_2);
+
 }
 
 #endif /* end of include guard: TI_LISP_BUILTIN_H */
