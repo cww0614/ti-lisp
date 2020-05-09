@@ -99,6 +99,8 @@ value_t *cpp_subtract(const value_t *value_1, const value_t *value_2) {
     return nullptr;
 }
 
+// Logical operations.
+
 value_t *cpp_equal(const value_t *value_1, const value_t *value_2) {
   value_t *res = new value_t;
   res->type = TYPE_BOOL;
@@ -117,6 +119,13 @@ value_t *cpp_equal(const value_t *value_1, const value_t *value_2) {
       res->value.bool_value = (v1bool == v2bool);
     }
       break;
+    case TYPE_STRING:
+    {
+      const char* v1 = (value_1->value).string_value.data;
+      const char* v2 = (value_2->value).string_value.data;
+      res->value.bool_value = (strcmp(v1, v2) == 0);
+    }
+      break;
     default:
       std::cout << "'=' not implemented for this type" << std::endl;
       res = nullptr;
@@ -124,6 +133,100 @@ value_t *cpp_equal(const value_t *value_1, const value_t *value_2) {
   }
   return res;
 }
+
+value_t *cpp_less_than(const value_t *value_1, const value_t *value_2) {
+  value_t *res = new value_t;
+  res->type = TYPE_BOOL;
+  switch (value_1->type){
+    case TYPE_INTEGER:
+    {      
+      int v1int = (value_1->value).int_value;
+      int v2int = (value_2->value).int_value;
+      res->value.bool_value = (v1int < v2int);
+    }
+    break;
+    case TYPE_STRING:
+    {
+      uint64_t l1 = (value_1->value).string_value.size;
+      uint64_t l2 = (value_2->value).string_value.size;
+      res->value.bool_value = (l1 < l2);
+    }
+    break;
+    default:
+      std::cout << "'<' not implemented for this type" << std::endl;
+      res = nullptr;
+      exit(1);
+  }
+  return res;
+}
+
+value_t *cpp_more_than(const value_t *value_1, const value_t *value_2) {
+  value_t *res = new value_t;
+  res->type = TYPE_BOOL;
+  switch (value_1->type){
+    case TYPE_INTEGER:
+    {      
+      int v1int = (value_1->value).int_value;
+      int v2int = (value_2->value).int_value;
+      res->value.bool_value = (v1int > v2int);
+    }
+    break;
+    case TYPE_STRING:
+    {
+      uint64_t l1 = (value_1->value).string_value.size;
+      uint64_t l2 = (value_2->value).string_value.size;
+      res->value.bool_value = (l1 > l2);
+    }
+    break;
+    default:
+      std::cout << "'>' not implemented for this type" << std::endl;
+      res = nullptr;
+      exit(1);
+  }
+  return res;
+}
+
+value_t *cpp_leq(const value_t *value_1, const value_t *value_2) {
+  value_t *res = new value_t;
+  res->type = TYPE_BOOL;
+  switch (value_1->type){
+    case TYPE_INTEGER:
+    {      
+      int v1int = (value_1->value).int_value;
+      int v2int = (value_2->value).int_value;
+      res->value.bool_value = (v1int <= v2int);
+    }
+      break;
+
+    default:
+      std::cout << "'<' not implemented for this type" << std::endl;
+      res = nullptr;
+      exit(1);
+  }
+  return res;
+}
+
+value_t *cpp_geq(const value_t *value_1, const value_t *value_2) {
+  value_t *res = new value_t;
+  res->type = TYPE_BOOL;
+  switch (value_1->type){
+    case TYPE_INTEGER:
+    {      
+      int v1int = (value_1->value).int_value;
+      int v2int = (value_2->value).int_value;
+      res->value.bool_value = (v1int >= v2int);
+    }
+      break;
+
+    default:
+      std::cout << "'>' not implemented for this type" << std::endl;
+      res = nullptr;
+      exit(1);
+  }
+  return res;
+}
+
+// Helper functions.
 
 void check_type(const value_t *value, uint8_t expected_type) {
   if (value == nullptr || value->type != expected_type) {

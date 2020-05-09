@@ -2,6 +2,7 @@
 #define TI_LISP_BUILTIN_H
 
 #include <cstdint>
+#include <cstring>
 
 extern "C" {
 
@@ -57,6 +58,10 @@ value_t *cpp_div(const value_t *value_1, const value_t *value_2);
 value_t *cpp_subtract(const value_t *value_1, const value_t *value_2);
 
 value_t *cpp_equal(const value_t *value_1, const value_t *value_2);
+value_t *cpp_less_than(const value_t *value_1, const value_t *value_2);
+value_t *cpp_more_than(const value_t *value_1, const value_t *value_2);
+value_t *cpp_leq(const value_t *value_1, const value_t *value_2);
+value_t *cpp_geq(const value_t *value_1, const value_t *value_2);
 
 }
 

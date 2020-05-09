@@ -79,6 +79,10 @@ let translate (stmts : stmt list) =
   let mult_func : L.llvalue = L.declare_function "cpp_mult" arth_t the_module in
   let div_func : L.llvalue = L.declare_function "cpp_div" arth_t the_module in
   let equal_func : L.llvalue = L.declare_function "cpp_equal" arth_t the_module in
+  let less_than_func = L.declare_function "cpp_less_than" arth_t the_module in
+  let more_than_func = L.declare_function "cpp_more_than" arth_t the_module in
+  let leq_func = L.declare_function "cpp_leq" arth_t the_module in
+  let geq_func = L.declare_function "cpp_geq" arth_t the_module in
 
   let check_type_func : L.llvalue =
     let func_type = L.function_type void_t [| value_ptr_type; i8_t |] in
@@ -133,7 +137,8 @@ let translate (stmts : stmt list) =
   let builtins = Symtable.from [
     ("display", display_func);
     ("+", add_func); ("*", mult_func); ("/", div_func); ("-", subtract_func);
-    ("=", equal_func);
+    ("=", equal_func); ("<", less_than_func); (">", more_than_func);
+    ("<=", leq_func); (">=", geq_func);
     ] in
 
   (* Find which variables in outer function are used *)
