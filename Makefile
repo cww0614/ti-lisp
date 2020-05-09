@@ -9,7 +9,7 @@ tilisp.native: $(SRC_FILES)
 	ocamlbuild -no-hygiene -package llvm tilisp.native
 
 testing.native: $(TEST_FILES)
-	ocamlbuild -lib unix testing.native
+	ocamlbuild -no-hygiene -lib unix testing.native
 
 tilisp.o: tilisp.h tilisp.cpp helper.cpp helper.h
 	g++ tilisp.cpp -c -o tilisp.o
