@@ -398,33 +398,37 @@ let translate (stmts : stmt list) =
         ignore
           (L.build_call check_type_func [| pred_val; type_bool |] "" builder);
         let then_bb = L.append_block context "then" the_func in
-        let builder, { value = then_value } =
+        let then_builder, { value = then_value } =
           build_temp_expr the_func "then" st
             (L.builder_at_end context then_bb)
             then_c
         in
+        let new_then_bb = L.insertion_block then_builder in
         let else_bb = L.append_block context "else" the_func in
-        let else_value =
+        let else_builder, else_value =
           match else_c with
           | Some expr ->
-              let _, { value } =
+              let builder, { value } =
                 build_temp_expr the_func "else" st
                   (L.builder_at_end context else_bb)
                   expr
               in
-              value
-          | None -> L.const_null value_ptr_type
+              (builder, value)
+          | None -> (builder, L.const_null value_ptr_type)
         in
+        let new_else_bb = L.insertion_block else_builder in
 
         let end_bb = L.append_block context "end" the_func in
         let build_br_end = L.build_br end_bb in
         add_terminal (L.builder_at_end context then_bb) build_br_end;
         add_terminal (L.builder_at_end context else_bb) build_br_end;
+        add_terminal then_builder build_br_end;
+        add_terminal else_builder build_br_end;
         ignore (L.build_cond_br value then_bb else_bb orig_builder);
         let builder = L.builder_at_end context end_bb in
         let phi =
           L.build_phi
-            [ (then_value, then_bb); (else_value, else_bb) ]
+            [ (then_value, new_then_bb); (else_value, new_else_bb) ]
             "ifval" builder
         in
         (builder, make_val phi)
