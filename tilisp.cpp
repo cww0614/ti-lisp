@@ -6,6 +6,10 @@
 value_t *display(const value_t *value) {
   if (value->type == TYPE_INTEGER) {
     std::cout << value->value.int_value << std::endl;
+  } else if (value->type == TYPE_STRING) {
+    std::cout << value->value.string_value.data << std::endl;
+  } else if (value->type == TYPE_CHAR){
+    std::cout << value->value.char_value << std::endl;
   }
   return nullptr;
 }
