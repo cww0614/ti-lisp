@@ -10,7 +10,7 @@ type value_type =
 
 type symbol_table = value_type Symtable.symbol_table
 
-let check : A.expr list -> stmt list =
+let check (expr_list: A.expr list): stmt list =
   let is_function (name : string) (symbol_table : symbol_table) : bool =
     match Symtable.find name symbol_table with
     | Some (Function (_, _, _)) -> true
@@ -310,9 +310,9 @@ let check : A.expr list -> stmt list =
     Symtable.from
       [
         ("+", Function (Value, 2, 255));
-        ("-", Function (Value, 2, 255));
+        ("-", Function (Value, 2, 2));
         ("*", Function (Value, 2, 255));
-        ("/", Function (Value, 2, 255));
+        ("/", Function (Value, 2, 2));
         ("=", Function (Value, 2, 2));
         (">", Function (Value, 2, 2));
         ("<", Function (Value, 2, 2));
@@ -325,14 +325,11 @@ let check : A.expr list -> stmt list =
         ("display", Function (Value, 1, 255));
       ]
   in
-
-  function
-  | stmts ->
-      let _, sast =
-        Utils.fold_map
-          (fun st stmt ->
-            let st, _, stmt = check_stmt st stmt in
-            (st, stmt))
-          builtin_variables stmts
-      in
+  let _, sast =
+    Utils.fold_map
+      (fun st stmt ->
+        let st, _, stmt = check_stmt st stmt in
+        (st, stmt))
+      builtin_variables expr_list
+  in
       sast
