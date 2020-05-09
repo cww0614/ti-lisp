@@ -85,8 +85,16 @@ let builtin_macros : symbol_table =
          ( "let",
            {| (syntax-rules ()
                 ((_ tag ((name val) ...) body ...)
-                 ((let ((tag (lambda (name ...) body ...)))
-                   tag) val ...))) |}
+                 ((let ((tag (lambda (name ...) body ...))) tag) val ...)
+         )) |}
+         );
+         ( "+",
+           {| (syntax-rules ()
+                ((+ a b c ...) (+ a (+ b c ...)))) |}
+         );
+         ( "*",
+           {| (syntax-rules ()
+                ((* a b c ...) (* a (* b c ...)))) |}
          );
        ])
 

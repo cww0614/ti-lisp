@@ -57,6 +57,8 @@ let ls_testcases = [
   ("[exe] set global variables", "exe_basic2", "-e");
 
   ("[exe] op plus", "exe_plus", "-e");
+  ("[exe] op variadic plus", "exe_variadic_plus", "-e");
+  ("[exe] op variadic mult", "exe_variadic_mult", "-e");
 
 ] in
 
