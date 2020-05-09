@@ -128,15 +128,20 @@ let translate (stmts : stmt list) =
     | None -> ignore (instr builder)
   in
 
+  let function_type (arg_size : int) : L.lltype =
+    let args_types = Array.make (1 + arg_size) value_ptr_type in
+    let access_link_type = i8_ptr_t in
+    args_types.(0) <- access_link_type;
+    L.function_type value_ptr_type args_types
+  in
+
   let builtins =
     Symtable.from
       (List.map
          (fun spec ->
            let lisp_name, cpp_name, min_arg, max_arg = spec in
            let func_type =
-             if min_arg = max_arg then
-               L.function_type value_ptr_type
-                 (Array.make min_arg value_ptr_type)
+             if min_arg = max_arg then function_type min_arg
              else
                L.var_arg_function_type value_ptr_type
                  (Array.make min_arg value_ptr_type)
@@ -227,13 +232,6 @@ let translate (stmts : stmt list) =
 
     let _, outer_vars = collect_dep_stmts st [] stmts in
     List.sort_uniq String.compare outer_vars
-  in
-
-  let function_type (arg_size : int) : L.lltype =
-    let args_types = Array.make (1 + arg_size) value_ptr_type in
-    let access_link_type = i8_ptr_t in
-    args_types.(0) <- access_link_type;
-    L.function_type value_ptr_type args_types
   in
 
   (* Used to wrap builtin functions in a value_t, so that we can pass
@@ -504,6 +502,7 @@ let translate (stmts : stmt list) =
               Utils.fold_map (build_temp_expr the_func "" st) builder args
             in
             let args = List.map llvalue_of args in
+            let args = (L.const_null i8_ptr_t) :: args in
             let args = Array.of_list args in
             let ret = L.build_call func args "ret" builder in
             (builder, make_val ret)

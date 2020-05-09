@@ -31,7 +31,7 @@ let ls_testcases = [
 
   (* Test SAST for fib. *)
   ("[more] (fib.tisp, SAST)" , "fib", "-s");
-  
+
   (* Test for nested inner defines *)
   ("[semant] inner_define_valid.tisp, SAST", "inner_define_valid", "-s");
 
@@ -60,7 +60,8 @@ let ls_testcases = [
   ("[exe] op plus", "exe_plus", "-e");
   ("[exe] op variadic plus", "exe_variadic_plus", "-e");
   ("[exe] op variadic mult", "exe_variadic_mult", "-e");
-  ("[exe op string concat]", "exe_string_concat", "-e")
+  ("[exe] high order builtin functions", "exe_high_order_builtin", "-e");
+  ("[exe] op string concat", "exe_string_concat", "-e")
 
 ] in
 
@@ -72,7 +73,7 @@ let read_lines ic : string list =
     | Some s -> loop (s :: acc)
     | None -> close_in ic; List.rev acc in
   loop [] in
-let string_to_list s  = 
+let string_to_list s  =
   let ls = ref [] in
   let _ = S.iter (fun c -> ignore(ls := c::!ls)) s in
   List.rev (!ls) in
@@ -92,11 +93,11 @@ let rec compare_list (a: string list) (b: string list) : bool =
     ([], []) -> true
   | (h1::t1, ls2) when (S.trim h1) = "" -> compare_list t1 ls2
   | (ls1, h2::t2) when (S.trim h2) = "" -> compare_list ls1 t2
-  | (h1::t1, h2::t2) when subset_string (S.trim h1) (S.trim h2) 
+  | (h1::t1, h2::t2) when subset_string (S.trim h1) (S.trim h2)
       -> compare_list t1 t2
   | _ -> false in
 
-let single_test (testcase : (string * string * string)) = 
+let single_test (testcase : (string * string * string)) =
   let (title, test_name, test_arg) = testcase in
   let cmd_run = "./tilisp.native "^test_arg^" tests/"^test_name^".tisp" in
   let file_expected = "tests/"^test_name^".log" in
@@ -110,7 +111,7 @@ let single_test (testcase : (string * string * string)) =
   let ls_stdout = read_lines output in
   let ls_errors = read_lines errors in
   let ls_actual = ls_stdout @ ls_errors in
-  let ic_expected = open_in file_expected in 
+  let ic_expected = open_in file_expected in
   let ls_expected = read_lines ic_expected in
   let _ = ignore(Unix.close_process_full (output, inp, errors));
   if (List.length ls_actual) = 0 then
@@ -126,5 +127,5 @@ let single_test (testcase : (string * string * string)) =
       print_string "Actual:\n"; List.iter print_endline ls_actual
   end in
 
-List.iter single_test ls_testcases; 
+List.iter single_test ls_testcases;
 "Governor Cuomo: we need more testing!"

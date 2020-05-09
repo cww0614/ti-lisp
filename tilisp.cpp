@@ -3,7 +3,7 @@
 #include "tilisp.h"
 #include "helper.h"
 
-value_t *display(const value_t *value) {
+value_t *display(const void*, const value_t *value) {
   switch (value->type)
   {
   case TYPE_INTEGER:
@@ -27,7 +27,7 @@ value_t *display(const value_t *value) {
 
 // Assumes semant has already filter out pairs which don't have the same type
 // though this hasn't been implemented yet
-value_t *cpp_add(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_add(const void*, const value_t *value_1, const value_t *value_2) {
     if (value_1->type == TYPE_INTEGER) {
         /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
         int tmp1 = (value_1->value).int_value;
@@ -45,7 +45,7 @@ value_t *cpp_add(const value_t *value_1, const value_t *value_2) {
     return nullptr;
 }
 
-value_t *cpp_mult(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_mult(const void*, const value_t *value_1, const value_t *value_2) {
     if (value_1->type == TYPE_INTEGER) {
         /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
         int tmp1 = (value_1->value).int_value;
@@ -63,7 +63,7 @@ value_t *cpp_mult(const value_t *value_1, const value_t *value_2) {
     return nullptr;
 }
 
-value_t *cpp_div(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_div(const void*, const value_t *value_1, const value_t *value_2) {
     if (value_1->type == TYPE_INTEGER) {
         /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
         int tmp1 = (value_1->value).int_value;
@@ -81,7 +81,7 @@ value_t *cpp_div(const value_t *value_1, const value_t *value_2) {
     return nullptr;
 }
 
-value_t *cpp_subtract(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_subtract(const void*, const value_t *value_1, const value_t *value_2) {
     if (value_1->type == TYPE_INTEGER) {
         /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
         int tmp1 = (value_1->value).int_value;
@@ -101,7 +101,7 @@ value_t *cpp_subtract(const value_t *value_1, const value_t *value_2) {
 
 // Logical operations.
 
-value_t *cpp_equal(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_equal(const void*, const value_t *value_1, const value_t *value_2) {
   value_t *res = new value_t;
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -134,7 +134,7 @@ value_t *cpp_equal(const value_t *value_1, const value_t *value_2) {
   return res;
 }
 
-value_t *cpp_less_than(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_less_than(const void*, const value_t *value_1, const value_t *value_2) {
   value_t *res = new value_t;
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -160,7 +160,7 @@ value_t *cpp_less_than(const value_t *value_1, const value_t *value_2) {
   return res;
 }
 
-value_t *cpp_more_than(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_more_than(const void*, const value_t *value_1, const value_t *value_2) {
   value_t *res = new value_t;
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -186,7 +186,7 @@ value_t *cpp_more_than(const value_t *value_1, const value_t *value_2) {
   return res;
 }
 
-value_t *cpp_leq(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_leq(const void*, const value_t *value_1, const value_t *value_2) {
   value_t *res = new value_t;
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -206,7 +206,7 @@ value_t *cpp_leq(const value_t *value_1, const value_t *value_2) {
   return res;
 }
 
-value_t *cpp_geq(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_geq(const void*, const value_t *value_1, const value_t *value_2) {
   value_t *res = new value_t;
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -227,7 +227,7 @@ value_t *cpp_geq(const value_t *value_1, const value_t *value_2) {
 }
 
 // Everything else
-value_t *cpp_concat(const value_t *value_1, const value_t *value_2) {
+value_t *cpp_concat(const void*, const value_t *value_1, const value_t *value_2) {
     if (value_1->type == TYPE_STRING){
         string_struct tmp1 = (value_1->value).string_value;
         string_struct tmp2 = (value_2->value).string_value;

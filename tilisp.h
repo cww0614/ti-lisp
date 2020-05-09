@@ -16,7 +16,7 @@ enum value_type {
   TYPE_SYMBOL = 6,
 };
 
-struct string_struct{
+struct string_struct {
   char *data;
   uint64_t size;
 };
@@ -49,22 +49,27 @@ struct value_t {
   } value;
 };
 
-value_t *display(const value_t *);
+value_t *display(const void *, const value_t *);
 
 void check_type(const value_t *, uint64_t);
 void check_func(const value_t *, uint8_t);
 
-value_t *cpp_add(const value_t *value_1, const value_t *value_2);
-value_t *cpp_mult(const value_t *value_1, const value_t *value_2);
-value_t *cpp_div(const value_t *value_1, const value_t *value_2);
-value_t *cpp_subtract(const value_t *value_1, const value_t *value_2);
+value_t *cpp_add(const void *, const value_t *value_1, const value_t *value_2);
+value_t *cpp_mult(const void *, const value_t *value_1, const value_t *value_2);
+value_t *cpp_div(const void *, const value_t *value_1, const value_t *value_2);
+value_t *cpp_subtract(const void *, const value_t *value_1,
+                      const value_t *value_2);
 
-value_t *cpp_equal(const value_t *value_1, const value_t *value_2);
-value_t *cpp_less_than(const value_t *value_1, const value_t *value_2);
-value_t *cpp_more_than(const value_t *value_1, const value_t *value_2);
-value_t *cpp_leq(const value_t *value_1, const value_t *value_2);
-value_t *cpp_geq(const value_t *value_1, const value_t *value_2);
-value_t *cpp_concat(const value_t *value_1, const value_t *value_2);
+value_t *cpp_equal(const void *, const value_t *value_1,
+                   const value_t *value_2);
+value_t *cpp_less_than(const void *, const value_t *value_1,
+                       const value_t *value_2);
+value_t *cpp_more_than(const void *, const value_t *value_1,
+                       const value_t *value_2);
+value_t *cpp_leq(const void *, const value_t *value_1, const value_t *value_2);
+value_t *cpp_geq(const void *, const value_t *value_1, const value_t *value_2);
+value_t *cpp_concat(const void *, const value_t *value_1,
+                    const value_t *value_2);
 }
 
 #endif /* end of include guard: TI_LISP_BUILTIN_H */

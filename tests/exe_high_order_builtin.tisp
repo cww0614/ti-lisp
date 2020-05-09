@@ -1,0 +1,4 @@
+(define (a print value)
+  (print value))
+
+(a display 10)
