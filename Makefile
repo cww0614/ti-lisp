@@ -24,3 +24,8 @@ test: testing.native libtilisp.a
 
 clean:
 	rm -rf *.o *.a *.ll _build *.native
+
+prune:
+	rm tilisp.o
+	rm helper.o
+	rm libtilisp.a

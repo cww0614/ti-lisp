@@ -48,7 +48,15 @@ let ls_testcases = [
   (* Duplcated parameters in lambda expression *)
   ("[semant] Duplcated parameters in lambda expression", "lambda_duplications", "-s");
 
-  ("[irg] built-in function call.", "irg_builtin_func", "-l");
+  (* ("[irg] built-in function call.", "irg_builtin_func", "-l"); *)
+
+  ("[exe] built-in display", "exe_display", "-e");
+
+  ("[exe] define variable", "exe_basic1", "-e");
+
+  ("[exe] set global variables", "exe_basic2", "-e");
+
+  ("[exe] op plus", "exe_plus", "-e");
 
 ] in
 
@@ -88,7 +96,13 @@ let single_test (testcase : (string * string * string)) =
   let (title, test_name, test_arg) = testcase in
   let cmd_run = "./tilisp.native "^test_arg^" tests/"^test_name^".tisp" in
   let file_expected = "tests/"^test_name^".log" in
-  let (output, inp, errors) = Unix.open_process_full cmd_run [| |] in
+  let (output, inp, errors) =  match test_arg with
+    "-e" -> begin
+      if Sys.command cmd_run != 0 then
+      raise (Failure "executable building fails.")
+      else Unix.open_process_full "./a.out" [| |]
+    end
+  | _ -> Unix.open_process_full cmd_run [| |] in
   let ls_stdout = read_lines output in
   let ls_errors = read_lines errors in
   let ls_actual = ls_stdout @ ls_errors in

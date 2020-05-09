@@ -1,0 +1,11 @@
+
+(define c 1)
+
+(define 
+    (a)
+    (set! c 10)
+)
+
+(a)
+
+(display c)
