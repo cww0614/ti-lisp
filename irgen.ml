@@ -257,7 +257,7 @@ let translate (stmts : stmt list) =
             let func_ptr =
               L.build_bitcast llvalue i8_ptr_t "func_ptr" builder
             in
-            let alloca = L.build_alloca value_type "buildin_wraper" builder in
+            let alloca = L.build_malloc value_type "builtin_wraper" builder in
             build_literal alloca type_func value_type_func
               [
                 (1, func_ptr);
@@ -308,14 +308,14 @@ let translate (stmts : stmt list) =
         | Some value -> maybe_wrap_builtin value builder
         | None -> raise (Failure "Undefined variable") )
     | Lambda (args, body) ->
-        let llvalue = L.build_alloca value_type name builder in
+        let llvalue = L.build_malloc value_type name builder in
         let arg_size = List.length args in
         let func_type = function_type arg_size in
         let func = L.define_function "lambda" func_type the_module in
         L.set_linkage L.Linkage.Internal func;
         { value = llvalue; real_func = Some func }
     | _ ->
-        let llvalue = L.build_alloca value_type name builder in
+        let llvalue = L.build_malloc value_type name builder in
         make_val llvalue
   and build_temp_expr (func : L.llvalue) (name : string) (st : symbol_table)
       (builder : L.llbuilder) (expr : expr) : L.llbuilder * value_t =
@@ -527,7 +527,7 @@ let translate (stmts : stmt list) =
           L.struct_type context (Array.make (List.length deps) value_ptr_type)
         in
         let access_link =
-          L.build_alloca access_link_type "access_link" builder
+          L.build_malloc access_link_type "access_link" builder
         in
 
         List.iteri
@@ -627,13 +627,13 @@ let translate (stmts : stmt list) =
         st
         (List.mapi (fun i name -> (i, name)) deps)
     in
-    let value = make_val (L.build_alloca value_type "" builder) in
+    let value = make_val (L.build_malloc value_type "" builder) in
     let _, builder, ret_value = build_stmt_block func value st builder stmts in
     ignore (L.build_ret (llvalue_of ret_value) builder)
   and build_main_func_body (func : L.llvalue) (st : symbol_table)
       (stmts : stmt list) =
     let builder = L.builder_at_end context (L.entry_block func) in
-    let value = make_val (L.build_alloca value_type "" builder) in
+    let value = make_val (L.build_malloc value_type "" builder) in
     let _, builder, _ = build_stmt_block func value st builder stmts in
     ignore (L.build_ret (L.const_int i32_t 0) builder)
   in
