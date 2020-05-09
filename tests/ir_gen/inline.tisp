@@ -1,0 +1,9 @@
+(define (a value)
+  (display value))
+
+(define (b value)
+  (a value))
+
+(define (c) (b 1234))
+
+(c)

@@ -1,6 +1,6 @@
-module L = Llvm;;
-module A = Ast;;
-open Sast;;
+module L = Llvm
+module A = Ast
+open Sast
 
 (* References:
 
@@ -8,7 +8,17 @@ open Sast;;
    - https://mapping-high-level-constructs-to-llvm-ir.readthedocs.io/en/latest/basic-constructs/unions.html
  *)
 
-type symbol_table = L.llvalue Symtable.symbol_table
+type value_t = { value : L.llvalue; real_func : L.llvalue option }
+
+let make_val v = { value = v; real_func = None }
+
+let llvalue_of = function { value } -> value
+
+let copy_value_metadata src dest =
+  let { value = dest_value } = dest in
+  { src with value = dest_value }
+
+type symbol_table = value_t Symtable.symbol_table
 
 let translate (stmts : stmt list) =
   let context = L.global_context () in
@@ -69,24 +79,8 @@ let translate (stmts : stmt list) =
     create_struct "value_t_string" context [| i64_t; i8_ptr_t; i64_t |]
   in
 
-  let display_func : L.llvalue =
-    let display_t = L.function_type value_ptr_type [| value_ptr_type |] in
-    L.declare_function "display" display_t the_module
-  in
-  let binary_op_t = L.function_type value_ptr_type [| value_ptr_type; value_ptr_type|] in 
-  let add_func : L.llvalue = L.declare_function "cpp_add" binary_op_t the_module in
-  let subtract_func : L.llvalue = L.declare_function "cpp_subtract" binary_op_t the_module in
-  let mult_func : L.llvalue = L.declare_function "cpp_mult" binary_op_t the_module in
-  let div_func : L.llvalue = L.declare_function "cpp_div" binary_op_t the_module in
-  let equal_func : L.llvalue = L.declare_function "cpp_equal" binary_op_t the_module in
-  let less_than_func = L.declare_function "cpp_less_than" binary_op_t the_module in
-  let more_than_func = L.declare_function "cpp_more_than" binary_op_t the_module in
-  let leq_func = L.declare_function "cpp_leq" binary_op_t the_module in
-  let geq_func = L.declare_function "cpp_geq" binary_op_t the_module in
-  let str_concat_func = L.declare_function "cpp_concat" binary_op_t the_module in
-
   let check_type_func : L.llvalue =
-    let func_type = L.function_type void_t [| value_ptr_type; i8_t |] in
+    let func_type = L.function_type void_t [| value_ptr_type; i64_t |] in
     L.declare_function "check_type" func_type the_module
   in
 
@@ -95,23 +89,21 @@ let translate (stmts : stmt list) =
     L.declare_function "check_func" func_type the_module
   in
 
-  let build_literal name type_value ltype values builder =
-    let alloca = L.build_alloca value_type name builder in
+  let build_literal alloca type_value ltype values builder =
     (* type_field is the tag in the llvm struct member*)
     let type_field = L.build_struct_gep alloca 0 "value_type" builder in
     ignore (L.build_store type_value type_field builder);
     let casted =
-        (* recasting alloca struct*)
+      (* recasting alloca struct*)
       L.build_bitcast alloca (L.pointer_type ltype) "content" builder
     in
-        (* writing the value to the struct, which is wrapped inside the "values" tuple *)
+    (* writing the value to the struct, which is wrapped inside the "values" tuple *)
     List.iter
       (function
         | idx, value ->
             let field = L.build_struct_gep casted idx "field" builder in
             ignore (L.build_store value field builder))
-      values;
-    alloca
+      values
   in
 
   let build_memcpy src dest builder =
@@ -124,9 +116,10 @@ let translate (stmts : stmt list) =
 
     let dest = L.build_bitcast dest i8_ptr_t "memcpy_dest" builder in
     let src = L.build_bitcast src i8_ptr_t "memcpy_src" builder in
-    L.build_call memcpy_func
-      [| dest; src; L.const_int i64_t value_size; L.const_int i1_t 0 |]
-      "" builder
+    ignore
+      (L.build_call memcpy_func
+         [| dest; src; L.const_int i64_t value_size; L.const_int i1_t 0 |]
+         "" builder)
   in
 
   let add_terminal builder instr =
@@ -135,13 +128,35 @@ let translate (stmts : stmt list) =
     | None -> ignore (instr builder)
   in
 
-  let builtins = Symtable.from [
-    ("display", display_func);
-    ("+", add_func); ("*", mult_func); ("/", div_func); ("-", subtract_func);
-    ("=", equal_func); ("<", less_than_func); (">", more_than_func);
-    ("<=", leq_func); (">=", geq_func);
-    ("++", str_concat_func);
-    ] in
+  let builtins =
+    Symtable.from
+      (List.map
+         (fun spec ->
+           let lisp_name, cpp_name, min_arg, max_arg = spec in
+           let func_type =
+             if min_arg = max_arg then
+               L.function_type value_ptr_type
+                 (Array.make min_arg value_ptr_type)
+             else
+               L.var_arg_function_type value_ptr_type
+                 (Array.make min_arg value_ptr_type)
+           in
+           let func = L.declare_function cpp_name func_type the_module in
+           (lisp_name, make_val func))
+         [
+           ("display", "display", 1, 1);
+           ("+", "cpp_add", 2, 2);
+           ("-", "cpp_subtract", 2, 2);
+           ("*", "cpp_mult", 2, 2);
+           ("/", "cpp_div", 2, 2);
+           ("=", "cpp_equal", 2, 2);
+           ("<", "cpp_less_than", 2, 2);
+           (">", "cpp_more_than", 2, 2);
+           ("<=", "cpp_leq", 2, 2);
+           (">=", "cpp_geq", 2, 2);
+           ("++", "cpp_concat", 2, 2);
+         ])
+  in
 
   (* Find which variables in outer function are used *)
   let rec collect_dependency (stmts : stmt list) (args : string list) :
@@ -223,10 +238,11 @@ let translate (stmts : stmt list) =
 
   (* Used to wrap builtin functions in a value_t, so that we can pass
      them as higher order functions *)
-  let maybe_wrap_builtin (v : L.llvalue) (builder : L.llbuilder) : L.llvalue =
-    match L.classify_type (L.element_type (L.type_of v)) with
+  let maybe_wrap_builtin (v : value_t) (builder : L.llbuilder) : value_t =
+    let { value = llvalue } = v in
+    match L.classify_type (L.element_type (L.type_of llvalue)) with
     | L.TypeKind.Function ->
-        let params = L.params v in
+        let params = L.params llvalue in
         if Array.length params = 0 then v
         else
           let first_param = params.(0) in
@@ -234,107 +250,128 @@ let translate (stmts : stmt list) =
           if
             L.classify_type fp_type = L.TypeKind.Pointer
             && L.classify_type (L.element_type fp_type) = L.TypeKind.Integer
-          then
+          then (
             (* Start wrapping *)
             (* TODO: support vaarg builtin here *)
             (* TODO: calculate args *)
-            let func_ptr = L.build_bitcast v i8_ptr_t "func_ptr" builder in
-            build_literal "builtin_wrapper" type_func value_type_func
+            let func_ptr =
+              L.build_bitcast llvalue i8_ptr_t "func_ptr" builder
+            in
+            let alloca = L.build_alloca value_type "buildin_wraper" builder in
+            build_literal alloca type_func value_type_func
               [
                 (1, func_ptr);
                 (2, L.const_null i8_ptr_t);
                 (3, L.const_int i8_t 1);
                 (4, L.const_int i8_t 1);
               ]
-              builder
+              builder;
+            { value = alloca; real_func = Some llvalue } )
           else v
     | _ -> v
   in
 
-  let rec build_stmt_block (func : L.llvalue) (st : symbol_table)
-      (builder : L.llbuilder) (stmts : stmt list) :
-      symbol_table * L.llbuilder * L.llvalue =
+  let rec build_stmt_block (func : L.llvalue) (decl : value_t)
+      (st : symbol_table) (builder : L.llbuilder) (stmts : stmt list) :
+      symbol_table * L.llbuilder * value_t =
     List.fold_left
       (fun ctx stmt ->
-        let st, builder, value = ctx in
-        build_stmt func st builder stmt)
-      (st, builder, L.const_null value_ptr_type)
-      stmts
-  and build_stmt (func : L.llvalue) (st : symbol_table) (builder : L.llbuilder)
-      : stmt -> symbol_table * L.llbuilder * L.llvalue = function
+        let st, builder, decl = ctx in
+        build_stmt func decl st builder stmt)
+      (st, builder, decl) stmts
+  and build_stmt (func : L.llvalue) (decl : value_t) (st : symbol_table)
+      (builder : L.llbuilder) : stmt -> symbol_table * L.llbuilder * value_t =
+    function
     | Define (name, value) ->
-        let alloca = L.build_alloca value_type name builder in
-        let st = Symtable.add name alloca st in
-        let builder, value = build_unnamed_expr func st builder value in
-        ignore (build_memcpy value alloca builder);
-        (st, builder, value)
+        let value_decl = declare_expr name st builder value in
+        let st = Symtable.add name value_decl st in
+        let builder, value_decl = build_expr func value_decl st builder value in
+        (st, builder, value_decl)
     | Set (name, value) ->
-        let builder, value = build_unnamed_expr func st builder value in
-        ignore
-          ( match Symtable.find name st with
-          | Some pos -> build_memcpy value pos builder
-          | _ -> raise (Failure "Undefined variable") );
-        (st, builder, value)
+        let decl =
+          match Symtable.find name st with
+          | Some decl -> decl
+          | _ -> raise (Failure "Undefined variable")
+        in
+        let value_decl = declare_expr name st builder value in
+        let st = Symtable.add name value_decl st in
+        let builder, value_decl = build_expr func value_decl st builder value in
+        build_memcpy (llvalue_of value_decl) (llvalue_of decl) builder;
+        (st, builder, decl)
     | Expr expr ->
-        let builder, value = build_unnamed_expr func st builder expr in
-        (st, builder, value)
-  and build_unnamed_expr func st builder = build_expr func "unnamed" st builder
-  and build_expr (the_func : L.llvalue) (name : string) (st : symbol_table)
-      (builder : L.llbuilder) : expr -> L.llbuilder * L.llvalue = function
-    | IntLit v ->
-        ( builder,
-          build_literal name type_integer value_type_int
-            [ (1, L.const_int i64_t v) ]
-            builder )
-    | BoolLit v ->
-        ( builder,
-          build_literal name type_bool value_type_bool
-            [ (1, L.const_int i1_t (if v then 1 else 0)) ]
-            builder )
-    | CharLit v ->
-        ( builder,
-          build_literal name type_char value_type_char
-            [ (1, L.const_int i8_t (Char.code v)) ]
-            builder )
-    | StrLit str ->
-        let str_ptr = L.build_global_stringptr str "string_literal" builder in
-        ( builder,
-          build_literal name type_string value_type_string
-            [ (1, str_ptr); (2, L.const_int i64_t (String.length str)) ]
-            builder )
-    | Symbol name ->
-        let str_ptr = L.build_global_stringptr name "symbol_literal" builder in
-        ( builder,
-          build_literal name type_symbol value_type_symbol
-            [ (1, str_ptr); (2, L.const_int i64_t (String.length name)) ]
-            builder )
+        let builder, decl = build_expr func decl st builder expr in
+        (st, builder, decl)
+  and declare_expr (name : string) (st : symbol_table) (builder : L.llbuilder) :
+      expr -> value_t = function
     | Id name -> (
         match Symtable.find name st with
-        | Some value -> (builder, maybe_wrap_builtin value builder)
+        | Some value -> maybe_wrap_builtin value builder
         | None -> raise (Failure "Undefined variable") )
+    | Lambda (args, body) ->
+        let llvalue = L.build_alloca value_type name builder in
+        let arg_size = List.length args in
+        let func_type = function_type arg_size in
+        let func = L.define_function "lambda" func_type the_module in
+        L.set_linkage L.Linkage.Internal func;
+        { value = llvalue; real_func = Some func }
+    | _ ->
+        let llvalue = L.build_alloca value_type name builder in
+        make_val llvalue
+  and build_temp_expr (func : L.llvalue) (name : string) (st : symbol_table)
+      (builder : L.llbuilder) (expr : expr) : L.llbuilder * value_t =
+    let value = declare_expr name st builder expr in
+    build_expr func value st builder expr
+  and build_expr (the_func : L.llvalue) (decl : value_t) (st : symbol_table)
+      (builder : L.llbuilder) : expr -> L.llbuilder * value_t = function
+    | IntLit v ->
+        build_literal (llvalue_of decl) type_integer value_type_int
+          [ (1, L.const_int i64_t v) ]
+          builder;
+        (builder, decl)
+    | BoolLit v ->
+        build_literal (llvalue_of decl) type_bool value_type_bool
+          [ (1, L.const_int i1_t (if v then 1 else 0)) ]
+          builder;
+        (builder, decl)
+    | CharLit v ->
+        build_literal (llvalue_of decl) type_char value_type_char
+          [ (1, L.const_int i8_t (Char.code v)) ]
+          builder;
+        (builder, decl)
+    | StrLit str ->
+        let str_ptr = L.build_global_stringptr str "string_literal" builder in
+        build_literal (llvalue_of decl) type_string value_type_string
+          [ (1, str_ptr); (2, L.const_int i64_t (String.length str)) ]
+          builder;
+        (builder, decl)
+    | Symbol name ->
+        let str_ptr = L.build_global_stringptr name "symbol_literal" builder in
+        build_literal (llvalue_of decl) type_symbol value_type_symbol
+          [ (1, str_ptr); (2, L.const_int i64_t (String.length name)) ]
+          builder;
+        (builder, decl)
     | Begin body ->
-        let _, builder, value = build_stmt_block the_func st builder body in
-        (builder, value)
+        let _, builder, decl = build_stmt_block the_func decl st builder body in
+        (builder, decl)
     | Let (bindings, body) ->
         (* This "let" is in fact "letrec" in standard scheme *)
-        let st =
-          List.fold_left
+        let st, bindings =
+          Utils.fold_map
             (fun st binding ->
-              let name, _ = binding in
-              Symtable.add name (L.build_alloca value_type name builder) st)
+              let name, expr = binding in
+              let decl = declare_expr name st builder expr in
+              (Symtable.add name decl st, (name, decl, expr)))
             st bindings
         in
         let builder =
           List.fold_left
             (fun builder binding ->
-              let name, expr = binding in
-              let builder, value =
-                build_unnamed_expr the_func st builder expr
-              in
+              let name, decl, expr = binding in
+              let builder, decl = build_expr the_func decl st builder expr in
               ignore
-                (build_memcpy value
+                (build_memcpy (llvalue_of decl)
                    ( match Symtable.find name st with
-                   | Some pos -> pos
+                   | Some { value = pos } -> pos
                    | None ->
                        raise
                          (Failure
@@ -344,10 +381,12 @@ let translate (stmts : stmt list) =
               builder)
             builder bindings
         in
-        let _, builder, value = build_stmt_block the_func st builder body in
-        (builder, value)
+        let _, builder, decl = build_stmt_block the_func decl st builder body in
+        (builder, decl)
     | If (pred, then_c, else_c) ->
-        let builder, pred_val = build_expr the_func "cmp" st builder pred in
+        let builder, { value = pred_val } =
+          build_temp_expr the_func "pred" st builder pred
+        in
         let casted =
           L.build_bitcast pred_val
             (L.pointer_type value_type_bool)
@@ -359,8 +398,8 @@ let translate (stmts : stmt list) =
         ignore
           (L.build_call check_type_func [| pred_val; type_bool |] "" builder);
         let then_bb = L.append_block context "then" the_func in
-        let builder, then_value =
-          build_expr the_func "then" st
+        let builder, { value = then_value } =
+          build_temp_expr the_func "then" st
             (L.builder_at_end context then_bb)
             then_c
         in
@@ -368,8 +407,8 @@ let translate (stmts : stmt list) =
         let else_value =
           match else_c with
           | Some expr ->
-              let _, value =
-                build_expr the_func "else" st
+              let _, { value } =
+                build_temp_expr the_func "else" st
                   (L.builder_at_end context else_bb)
                   expr
               in
@@ -388,7 +427,7 @@ let translate (stmts : stmt list) =
             [ (then_value, then_bb); (else_value, else_bb) ]
             "ifval" builder
         in
-        (builder, phi)
+        (builder, make_val phi)
     | FunCall (func, args) -> (
         let builder, func =
           match func with
@@ -397,22 +436,26 @@ let translate (stmts : stmt list) =
               | Some func -> (builder, func)
               | None -> raise (Failure ("Function " ^ name ^ " is not defined"))
               )
-          | expr -> build_unnamed_expr the_func st builder expr
+          | expr -> build_temp_expr the_func "" st builder expr
         in
 
         (* Reference: https://groups.google.com/forum/#!topic/llvm-dev/_xy_3ZpQFLI *)
+        let { value = func; real_func } = func in
         match L.classify_type (L.element_type (L.type_of func)) with
         (* User defined functions *)
-        | L.TypeKind.Struct ->
+        | L.TypeKind.Struct -> (
             let arg_size = List.length args in
             (* check if value is really a function *)
-            ignore
-              (L.build_call check_func_func
-                 [| func; L.const_int i8_t arg_size |]
-                 "" builder);
+            ( match real_func with
+            | Some _ -> ()
+            | None ->
+                ignore
+                  (L.build_call check_func_func
+                     [| func; L.const_int i8_t arg_size |]
+                     "" builder) );
             (* prepare arguments *)
             let builder, args =
-              Utils.fold_map (build_unnamed_expr func st) builder args
+              Utils.fold_map (build_temp_expr func "" st) builder args
             in
             (* bitcast the value to a function for calling *)
             let function_type = function_type arg_size in
@@ -431,38 +474,50 @@ let translate (stmts : stmt list) =
               in
               access_link
             in
+            let args = List.map llvalue_of args in
             let args = Array.of_list (access_link :: args) in
-            (* call the function pointer *)
-            let func_ptr_ptr =
-              L.build_struct_gep casted 1 "func_ptr_ptr" builder
-            in
-            let func_ptr = L.build_load func_ptr_ptr "func_ptr" builder in
-            let func =
-              L.build_inttoptr
-                (L.build_ptrtoint func_ptr i64_t "func_ptr_val" builder)
-                (L.pointer_type function_type)
-                "func" builder
-            in
-            let ret = L.build_call func args "ret" builder in
-            (builder, ret)
+            match real_func with
+            | Some real_func ->
+                let ret = L.build_call real_func args "ret" builder in
+                (builder, make_val ret)
+            | None ->
+                (* call the function pointer *)
+                let func_ptr_ptr =
+                  L.build_struct_gep casted 1 "func_ptr_ptr" builder
+                in
+                let func_ptr = L.build_load func_ptr_ptr "func_ptr" builder in
+                let func =
+                  L.build_inttoptr
+                    (L.build_ptrtoint func_ptr i64_t "func_ptr_val" builder)
+                    (L.pointer_type function_type)
+                    "func" builder
+                in
+                let ret = L.build_call func args "ret" builder in
+                (builder, make_val ret) )
         (* Builtin functions *)
         | L.TypeKind.Function ->
             let builder, args =
-              Utils.fold_map (build_unnamed_expr the_func st) builder args
+              Utils.fold_map (build_temp_expr the_func "" st) builder args
             in
+            let args = List.map llvalue_of args in
             let args = Array.of_list args in
             let ret = L.build_call func args "ret" builder in
-            (builder, ret)
+            (builder, make_val ret)
         | _ -> raise (Failure "Unexpected function type") )
     | Lambda (args, body) ->
+        let { real_func = func } = decl in
+        let func =
+          match func with
+          | Some func -> func
+          | None ->
+              raise
+                (Failure
+                   "Invariant violation, declare_expr should have set up \
+                    real_func")
+        in
         let arg_size = List.length args in
         let deps = collect_dependency body args in
-        let func_type = function_type arg_size in
-        let func = L.define_function "lambda" func_type the_module in
         let func_ptr = L.build_bitcast func i8_ptr_t "func_ptr" builder in
-        (* The symbol table of the new function is built from "builtin"
-           instead of inherited from the parent *)
-        let new_st = Symtable.push builtins in
         (* set up access link *)
         let access_link_type =
           L.struct_type context (Array.make (List.length deps) value_ptr_type)
@@ -479,8 +534,8 @@ let translate (stmts : stmt list) =
             ignore
               (L.build_store
                  ( match Symtable.find dep st with
-                 | Some value -> value
-                 | None -> raise (Failure "Can't find variable for access link")
+                 | Some { value } -> value
+                 | None -> raise (Failure ("Can't find outer variable " ^ dep))
                  )
                  field builder))
           deps;
@@ -491,8 +546,8 @@ let translate (stmts : stmt list) =
               match arg_name with
               | "" -> st (* ignore the first argument *)
               | _ -> Symtable.add arg_name arg st)
-            new_st
-            (Array.to_list (L.params func))
+            st
+            (List.map make_val (Array.to_list (L.params func)))
             (* The first argument of a function is the
                access link, and it will not be added to
                the symbol table *)
@@ -504,24 +559,32 @@ let translate (stmts : stmt list) =
         let access_link_void_ptr =
           L.build_bitcast access_link i8_ptr_t "access_link_void_ptr" builder
         in
-        let func_value =
-          build_literal "lambda" type_func value_type_func
-            [
-              (1, func_ptr);
-              (2, access_link_void_ptr);
-              (3, L.const_int i8_t arg_size);
-              (4, L.const_int i8_t arg_size);
-            ]
-            builder
-        in
-        (builder, func_value)
+        build_literal (llvalue_of decl) type_func value_type_func
+          [
+            (1, func_ptr);
+            (2, access_link_void_ptr);
+            (3, L.const_int i8_t arg_size);
+            (4, L.const_int i8_t arg_size);
+          ]
+          builder;
+        (builder, decl)
     | Cons (hd, tl) ->
-        let builder, car = build_expr the_func "car" st builder hd in
-        let builder, cdr = build_expr the_func "cdr" st builder tl in
-        ( builder,
-          build_literal name type_cons value_type_cons [ (1, car); (2, cdr) ]
-            builder )
-    | Nil -> (builder, L.const_null value_ptr_type)
+        let builder, { value = car } =
+          build_temp_expr the_func "car" st builder hd
+        in
+        let builder, { value = cdr } =
+          build_temp_expr the_func "cdr" st builder tl
+        in
+        build_literal (llvalue_of decl) type_cons value_type_cons
+          [ (1, car); (2, cdr) ] builder;
+        (builder, decl)
+    | Nil ->
+        ignore
+          (L.build_store
+             (L.const_null value_ptr_type)
+             (llvalue_of decl) builder);
+        (builder, decl)
+    | Id _ -> (builder, decl)
   and build_func_body (deps : string list) (func : L.llvalue)
       (st : symbol_table) (stmts : stmt list) : unit =
     let builder = L.builder_at_end context (L.entry_block func) in
@@ -545,16 +608,29 @@ let translate (stmts : stmt list) =
             L.build_struct_gep access_link index "outer_var_ptr" builder
           in
           let field = L.build_load field_ptr "outer_var" builder in
-          Symtable.add name field st)
+          let outer_value =
+            match Symtable.find name st with
+            | Some outer_value -> outer_value
+            | None ->
+                raise
+                  (Failure
+                     "Invariant violation, symbol table should container outer \
+                      variables")
+          in
+          Symtable.add name
+            (copy_value_metadata outer_value (make_val field))
+            st)
         st
         (List.mapi (fun i name -> (i, name)) deps)
     in
-    let _, builder, value = build_stmt_block func st builder stmts in
-    ignore (L.build_ret value builder)
+    let value = make_val (L.build_alloca value_type "" builder) in
+    let _, builder, ret_value = build_stmt_block func value st builder stmts in
+    ignore (L.build_ret (llvalue_of ret_value) builder)
   and build_main_func_body (func : L.llvalue) (st : symbol_table)
       (stmts : stmt list) =
     let builder = L.builder_at_end context (L.entry_block func) in
-    let _, builder, _ = build_stmt_block func st builder stmts in
+    let value = make_val (L.build_alloca value_type "" builder) in
+    let _, builder, _ = build_stmt_block func value st builder stmts in
     ignore (L.build_ret (L.const_int i32_t 0) builder)
   in
 

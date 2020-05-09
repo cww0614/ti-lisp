@@ -106,7 +106,7 @@ value_t *cpp_equal(const value_t *value_1, const value_t *value_2) {
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
-    {      
+    {
       int v1int = (value_1->value).int_value;
       int v2int = (value_2->value).int_value;
       res->value.bool_value = (v1int == v2int);
@@ -139,7 +139,7 @@ value_t *cpp_less_than(const value_t *value_1, const value_t *value_2) {
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
-    {      
+    {
       int v1int = (value_1->value).int_value;
       int v2int = (value_2->value).int_value;
       res->value.bool_value = (v1int < v2int);
@@ -165,7 +165,7 @@ value_t *cpp_more_than(const value_t *value_1, const value_t *value_2) {
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
-    {      
+    {
       int v1int = (value_1->value).int_value;
       int v2int = (value_2->value).int_value;
       res->value.bool_value = (v1int > v2int);
@@ -191,7 +191,7 @@ value_t *cpp_leq(const value_t *value_1, const value_t *value_2) {
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
-    {      
+    {
       int v1int = (value_1->value).int_value;
       int v2int = (value_2->value).int_value;
       res->value.bool_value = (v1int <= v2int);
@@ -211,7 +211,7 @@ value_t *cpp_geq(const value_t *value_1, const value_t *value_2) {
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
-    {      
+    {
       int v1int = (value_1->value).int_value;
       int v2int = (value_2->value).int_value;
       res->value.bool_value = (v1int >= v2int);
@@ -247,7 +247,7 @@ value_t *cpp_concat(const value_t *value_1, const value_t *value_2) {
 }
 
 // Checking functions during irgen.
-void check_type(const value_t *value, uint8_t expected_type) {
+void check_type(const value_t *value, uint64_t expected_type) {
   if (value == nullptr || value->type != expected_type) {
     std::cout << "Exepcted variable to be a " << type_name(expected_type)
               << ", but got a " << value_type_name(value) << std::endl;
