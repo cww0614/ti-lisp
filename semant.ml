@@ -309,10 +309,10 @@ let check : A.expr list -> stmt list =
   let builtin_variables =
     Symtable.from
       [
-        ("+", Function (Value, 2, 2));
-        ("-", Function (Value, 2, 2));
-        ("*", Function (Value, 2, 2));
-        ("/", Function (Value, 2, 2));
+        ("+", Function (Value, 2, 255));
+        ("-", Function (Value, 2, 255));
+        ("*", Function (Value, 2, 255));
+        ("/", Function (Value, 2, 255));
         ("=", Function (Value, 2, 2));
         (">", Function (Value, 2, 2));
         ("<", Function (Value, 2, 2));
@@ -321,8 +321,8 @@ let check : A.expr list -> stmt list =
         ("cons", Function (Value, 2, 2));
         ("car", Function (Value, 1, 1));
         ("cdr", Function (Value, 1, 1));
-        ("list", Function (Value, 1, 256));
-        ("display", Function (Value, 1, 256));
+        ("list", Function (Value, 1, 255));
+        ("display", Function (Value, 1, 255));
       ]
   in
 
