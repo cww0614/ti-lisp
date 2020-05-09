@@ -226,8 +226,27 @@ value_t *cpp_geq(const value_t *value_1, const value_t *value_2) {
   return res;
 }
 
-// Helper functions.
+// Everything else
+value_t *cpp_concat(const value_t *value_1, const value_t *value_2) {
+    if (value_1->type == TYPE_STRING){
+        string_struct tmp1 = (value_1->value).string_value;
+        string_struct tmp2 = (value_2->value).string_value;
+        string_struct tmp3;
+        tmp3.size = tmp1.size + tmp2.size;
+        tmp3.data = concat_string_struct(tmp1,tmp2);
 
+        value_t *output = new value_t;
+        output->type = TYPE_STRING;
+        output->value.string_value = tmp3;
+        return output;
+    }
+    else{
+        std::cout << "++ not implemented for this type" << std::endl;
+        exit(1);
+    }
+}
+
+// Checking functions during irgen.
 void check_type(const value_t *value, uint8_t expected_type) {
   if (value == nullptr || value->type != expected_type) {
     std::cout << "Exepcted variable to be a " << type_name(expected_type)

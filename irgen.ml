@@ -73,16 +73,17 @@ let translate (stmts : stmt list) =
     let display_t = L.function_type value_ptr_type [| value_ptr_type |] in
     L.declare_function "display" display_t the_module
   in
-  let arth_t = L.function_type value_ptr_type [| value_ptr_type; value_ptr_type|] in 
-  let add_func : L.llvalue = L.declare_function "cpp_add" arth_t the_module in
-  let subtract_func : L.llvalue = L.declare_function "cpp_subtract" arth_t the_module in
-  let mult_func : L.llvalue = L.declare_function "cpp_mult" arth_t the_module in
-  let div_func : L.llvalue = L.declare_function "cpp_div" arth_t the_module in
-  let equal_func : L.llvalue = L.declare_function "cpp_equal" arth_t the_module in
-  let less_than_func = L.declare_function "cpp_less_than" arth_t the_module in
-  let more_than_func = L.declare_function "cpp_more_than" arth_t the_module in
-  let leq_func = L.declare_function "cpp_leq" arth_t the_module in
-  let geq_func = L.declare_function "cpp_geq" arth_t the_module in
+  let binary_op_t = L.function_type value_ptr_type [| value_ptr_type; value_ptr_type|] in 
+  let add_func : L.llvalue = L.declare_function "cpp_add" binary_op_t the_module in
+  let subtract_func : L.llvalue = L.declare_function "cpp_subtract" binary_op_t the_module in
+  let mult_func : L.llvalue = L.declare_function "cpp_mult" binary_op_t the_module in
+  let div_func : L.llvalue = L.declare_function "cpp_div" binary_op_t the_module in
+  let equal_func : L.llvalue = L.declare_function "cpp_equal" binary_op_t the_module in
+  let less_than_func = L.declare_function "cpp_less_than" binary_op_t the_module in
+  let more_than_func = L.declare_function "cpp_more_than" binary_op_t the_module in
+  let leq_func = L.declare_function "cpp_leq" binary_op_t the_module in
+  let geq_func = L.declare_function "cpp_geq" binary_op_t the_module in
+  let str_concat_func = L.declare_function "cpp_concat" binary_op_t the_module in
 
   let check_type_func : L.llvalue =
     let func_type = L.function_type void_t [| value_ptr_type; i8_t |] in
@@ -139,6 +140,7 @@ let translate (stmts : stmt list) =
     ("+", add_func); ("*", mult_func); ("/", div_func); ("-", subtract_func);
     ("=", equal_func); ("<", less_than_func); (">", more_than_func);
     ("<=", leq_func); (">=", geq_func);
+    ("++", str_concat_func);
     ] in
 
   (* Find which variables in outer function are used *)

@@ -51,6 +51,7 @@ let ls_testcases = [
   (* ("[irg] built-in function call.", "irg_builtin_func", "-l"); *)
 
   ("[exe] built-in display", "exe_display", "-e");
+  ("[exe] built-in display string", "exe_display_string", "-e");
 
   ("[exe] define variable", "exe_basic1", "-e");
 
@@ -59,6 +60,7 @@ let ls_testcases = [
   ("[exe] op plus", "exe_plus", "-e");
   ("[exe] op variadic plus", "exe_variadic_plus", "-e");
   ("[exe] op variadic mult", "exe_variadic_mult", "-e");
+  ("[exe op string concat]", "exe_string_concat", "-e")
 
 ] in
 
@@ -120,7 +122,7 @@ let single_test (testcase : (string * string * string)) =
     print_endline ("Test case: "^title^" [passed].")
   else begin
       print_endline ("Test case: "^title^" [failed].");
-      print_string "Expeceted:\n"; List.iter print_endline ls_expected;
+      print_string "Expected:\n"; List.iter print_endline ls_expected;
       print_string "Actual:\n"; List.iter print_endline ls_actual
   end in
 

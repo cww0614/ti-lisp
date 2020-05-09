@@ -318,6 +318,7 @@ let check (expr_list: A.expr list): stmt list =
         ("<", Function (Value, 2, 2));
         (">=", Function (Value, 2, 2));
         ("<=", Function (Value, 2, 2));
+        ("++", Function (Value, 2, 2));
         ("cons", Function (Value, 2, 2));
         ("car", Function (Value, 1, 1));
         ("cdr", Function (Value, 1, 1));

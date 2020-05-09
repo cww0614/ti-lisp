@@ -16,6 +16,11 @@ enum value_type {
   TYPE_SYMBOL = 6,
 };
 
+struct string_struct{
+  char *data;
+  uint64_t size;
+};
+
 struct value_t {
   uint64_t type;
 
@@ -24,10 +29,7 @@ struct value_t {
     char bool_value;
     char char_value;
 
-    struct {
-      char *data;
-      uint64_t size;
-    } string_value;
+    string_struct string_value;
 
     struct {
       char *data;
@@ -63,6 +65,7 @@ value_t *cpp_more_than(const value_t *value_1, const value_t *value_2);
 value_t *cpp_leq(const value_t *value_1, const value_t *value_2);
 value_t *cpp_geq(const value_t *value_1, const value_t *value_2);
 
+value_t *cpp_concat(const value_t *value_1, const value_t *value_2);
 }
 
 #endif /* end of include guard: TI_LISP_BUILTIN_H */
