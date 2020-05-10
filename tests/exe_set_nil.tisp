@@ -1,0 +1,9 @@
+(define a 1)
+(define b 2)
+
+(let ((a (display b)))
+  (display a))
+
+(set! a (display b))
+
+(display a)

@@ -170,7 +170,7 @@ let translate (stmts : stmt list) =
            ("function?", "is_function", 1, 1);
            ("symbol?", "is_symbol", 1, 1);
            ("nil?", "is_nil", 1, 1);
-           ("cons", "cpp_cons", 2,2);
+           ("cons", "cpp_cons", 2, 2);
            ("car", "cpp_car", 1, 1);
            ("cdr", "cpp_cdr", 1, 1);
          ])
@@ -373,23 +373,15 @@ let translate (stmts : stmt list) =
               (Symtable.add name decl st, (name, decl, expr)))
             st bindings
         in
-        let builder =
+        let builder, st =
           List.fold_left
-            (fun builder binding ->
+            (fun ctx binding ->
               let name, decl, expr = binding in
+              let builder, st = ctx in
               let builder, decl = build_expr the_func decl st builder expr in
-              ignore
-                (build_memcpy (llvalue_of decl)
-                   ( match Symtable.find name st with
-                   | Some { value = pos } -> pos
-                   | None ->
-                       raise
-                         (Failure
-                            "Programming Error: Let variables not in symbol \
-                             table") )
-                   builder);
-              builder)
-            builder bindings
+              let st = Symtable.add name decl st in
+              (builder, st))
+            (builder, st) bindings
         in
         let _, builder, decl = build_stmt_block the_func decl st builder body in
         (builder, decl)
