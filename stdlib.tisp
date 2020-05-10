@@ -1,0 +1,100 @@
+# These macros and functions are adapted from:
+# https://github.com/magnars/dash.el
+
+# threading first
+(define-syntax ->
+  (syntax-rules ()
+    ((_ initial (func))
+     (func initial))
+    ((_ initial (func args ...))
+     (func initial args ...))
+    ((_ initial (func args ...) more ...)
+     (-> (func initial args) more ...))
+    ((_ initial (func) more ...)
+     (-> (func initial) more ...))))
+
+# threading last
+(define-syntax ->>
+  (syntax-rules ()
+    ((_ initial (clause ...))
+     (clause ... initial))
+    ((_ initial (clause ...) rest ...)
+     (->> (clause ... initial) rest ...))))
+
+# threading "it"
+(define-syntax --replace-it
+  (syntax-rules (it)
+    ((_ value () (it rest ...))
+     (--replace-it value (value) (rest ...)))
+    ((_ value () (first rest ...))
+     (--replace-it value (first) (rest ...)))
+
+    ((_ value (result ...) (it))
+     (--replace-it value (result ... value) ()))
+    ((_ value (result ...) (first))
+     (--replace-it value (result ... first) ()))
+
+    ((_ value (result ...) (it rest ...))
+     (--replace-it value (result ... value) (rest ...)))
+    ((_ value (result ...) (first rest ...))
+     (--replace-it value (result ... first) (rest ...)))
+
+    ((_ value (result ...) ())
+     (result ...))))
+
+(define-syntax -->
+  (syntax-rules ()
+    ((_ initial (clause ...))
+     (--replace-it initial () (clause ...)))
+    ((_ initial (clause ...) more ...)
+     (--> (--replace-it initial () (clause ...)) more ...))))
+
+(define (map f list)
+  (if (nil? list)
+      '()
+      (cons (f (car list)) (map f (cdr list)))))
+
+(define (filter f list)
+  (if (nil? list)
+      '()
+      (let ((hd (car list))
+            (tl (cdr list)))
+        (if (f hd)
+            (cons hd (filter f tl))
+            (filter f tl)))))
+
+(define (reduce-from f init list)
+  (let iter ((acc init) (list list))
+    (if (nil? list)
+        acc
+        (iter (f acc (car list)) (cdr list)))))
+
+(define (reduce-r-from f init list)
+  (if (nil? list)
+      init
+      (f (car list) (reduce-r-from f init (cdr list)))))
+
+(define (reduce f list)
+  (reduce-from f (car list) (cdr list)))
+
+(define (reduce-r f list)
+  (if (nil? (cdr list))
+      (car list)
+      (f (car list) (reduce-r f (cdr list)))))
+
+# macro forms for convenience
+
+(define-syntax define-macro-variant
+  (syntax-rules ()
+    ((_ (args ...) macro-name func)
+     (define-syntax macro-name
+       (syntax-rules ()
+         ((_ f rest ...)
+          (func (lambda (args ...) f) rest ...)))))))
+
+(define-macro-variant (it) -map map)
+(define-macro-variant (it) -filter filter)
+(define-macro-variant (acc it) -reduce reduce)
+(define-macro-variant (it acc) -reduce-r reduce-r)
+(define-macro-variant (acc it) -reduce-from reduce-from)
+(define-macro-variant (it acc) -reduce-r-from reduce-r-from)

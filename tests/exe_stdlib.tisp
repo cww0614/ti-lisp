@@ -1,0 +1,11 @@
+(display (->> '(1 2 3 4 5)
+              (-map (+ it 1))
+              (-map (* it 2))
+              (-filter (> it 5))
+              (reduce +)))
+
+(display (--> '(1 2 3 4 5)
+              (-map (+ it 1) it)
+              (-map (* it 2) it)
+              (-filter (> it 5) it)
+              (reduce + it)))

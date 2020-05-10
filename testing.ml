@@ -65,7 +65,8 @@ let ls_testcases = [
   ("[exe] op string concat", "exe_string_concat", "-e");
   ("[exe] op cons on empty list", "exe_cons_empty_list", "-e");
   ("[exe] counter", "exe_counter", "-e");
-  ("[exe] set nil", "exe_set_nil", "-e")
+  ("[exe] set nil", "exe_set_nil", "-e");
+  ("[exe] stdlib", "exe_stdlib", "-e")
 
 ] in
 

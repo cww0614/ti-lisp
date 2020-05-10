@@ -24,7 +24,15 @@ let _ =
   Arg.parse speclist (fun filename -> channel := open_in filename) usage_msg;
 
   (* Run program *)
-  let lexbuf = Lexing.from_channel !channel in
+  let program = really_input_string !channel (in_channel_length !channel) in
+  let stdlib_channel = open_in "stdlib.tisp" in
+  let stdlib =
+    really_input_string stdlib_channel (in_channel_length stdlib_channel)
+  in
+  let lexbuf =
+    Lexing.from_string
+      (match !action with Exec -> stdlib ^ program | _ -> program)
+  in
   let program = Parser.program Scanner.token lexbuf in
   let expanded = Macro.expand_all program in
   match !action with
