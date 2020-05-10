@@ -14,7 +14,7 @@ OCaml packages from opam:
 1. llvm
 2. ocamlbuild
 
-Boehm GC:
+Boehm GC (or execute `make fakegc` to skip this step):
 
 ```bash
 cd ti-lisp # cd to the project root
