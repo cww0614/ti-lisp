@@ -3,4 +3,6 @@
     (define b 2)
     b))
   (define c 3)
-  (funcall display a c)))
+  (begin
+    (funcall display a)
+    (funcall display c))))

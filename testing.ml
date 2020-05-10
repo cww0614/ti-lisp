@@ -52,6 +52,7 @@ let ls_testcases = [
 
   ("[exe] built-in display", "exe_display", "-e");
   ("[exe] built-in display string", "exe_display_string", "-e");
+  ("[exe] built-in display multiple", "exe_display_multiple", "-e");
 
   ("[exe] define variable", "exe_basic1", "-e");
 

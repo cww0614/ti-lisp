@@ -1,0 +1,7 @@
+(display 999)
+
+(display 1 2 3 4 5)
+
+(display "hi" "hello" "goodbye")
+
+(display 1 "good morning" 'c')
