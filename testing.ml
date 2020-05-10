@@ -62,7 +62,8 @@ let ls_testcases = [
   ("[exe] op variadic plus", "exe_variadic_plus", "-e");
   ("[exe] op variadic mult", "exe_variadic_mult", "-e");
   ("[exe] high order builtin functions", "exe_high_order_builtin", "-e");
-  ("[exe] op string concat", "exe_string_concat", "-e")
+  ("[exe] op string concat", "exe_string_concat", "-e");
+  ("[exe] op cons on empty list", "exe_cons_empty_list", "-e");
 
 ] in
 

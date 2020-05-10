@@ -1,0 +1,1 @@
+(display (car (cons 1 '())))

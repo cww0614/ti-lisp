@@ -81,6 +81,9 @@ value_t *is_nil(const void *, const value_t *value);
 value_t *cpp_concat(const void *, const value_t *value_1,
                     const value_t *value_2);
 
+value_t* cpp_cons(const void *, const value_t *value_1, const value_t *value_2);
+value_t* cpp_car(const void *, const value_t *value1);
+value_t* cpp_cdr(const void *, const value_t *value1);
 void *GC_malloc(size_t size);
 }
 

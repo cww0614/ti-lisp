@@ -327,6 +327,53 @@ value_t *is_nil(const void *, const value_t *value){
   return res;
 }
 
+value_t* cpp_cons(const void *, const value_t *value_1, const value_t *value_2){
+    // bit of error checking
+    if (!value_1){
+        std::cout << "Error: '()/nil cannot be the first argument to cons" << std::endl;
+        exit(1);
+    }
+
+    value_t *output = (value_t*)GC_malloc(sizeof(value_t));
+    output->type = TYPE_CONS;
+    output->value.cons_value.car = const_cast<value_t*>(value_1); 
+
+    if (value_2 == nullptr){
+        /* std::cout << "Got zero intialized" << std::endl; */
+        output->value.cons_value.cdr = nullptr;
+    }
+    else if (value_2->type != TYPE_CONS){
+        std::cout << "Error: second argument of cons must be a list" << std::endl;
+        exit(1);
+    }
+    else{
+        output->value.cons_value.cdr = const_cast<value_t*>(value_2);
+    }
+    return output;
+}
+
+value_t* cpp_car(const void *, const value_t *value1){
+    if (value1->type == TYPE_CONS){
+        return value1->value.cons_value.car;
+    }
+    else{
+        std::cout << "car function not implemented for this type" << std::endl;
+        exit(1);
+    }
+    return nullptr;
+}
+
+value_t* cpp_cdr(const void *, const value_t *value1){
+    if (value1->type == TYPE_CONS){
+        return value1->value.cons_value.cdr;
+    }
+    else{
+        std::cout << "cdr function not implemented for this type" << std::endl;
+        exit(1);
+    }
+    return nullptr;
+}
+
 // General utilities.
 // Checking functions during irgen.
 void check_type(const value_t *value, uint64_t expected_type) {

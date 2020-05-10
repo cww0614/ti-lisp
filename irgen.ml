@@ -170,6 +170,9 @@ let translate (stmts : stmt list) =
            ("function?", "is_function", 1, 1);
            ("symbol?", "is_symbol", 1, 1);
            ("nil?", "is_nil", 1, 1);
+           ("cons", "cpp_cons", 2,2);
+           ("car", "cpp_car", 1, 1);
+           ("cdr", "cpp_cdr", 1, 1);
          ])
   in
 
