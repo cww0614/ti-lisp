@@ -26,7 +26,7 @@ struct value_t {
 
   union {
     int64_t int_value;
-    char bool_value;
+    bool bool_value;
     char char_value;
 
     string_struct string_value;
@@ -68,6 +68,16 @@ value_t *cpp_more_than(const void *, const value_t *value_1,
                        const value_t *value_2);
 value_t *cpp_leq(const void *, const value_t *value_1, const value_t *value_2);
 value_t *cpp_geq(const void *, const value_t *value_1, const value_t *value_2);
+
+value_t *is_integer(const void *, const value_t *value);
+value_t *is_char(const void *, const value_t *value);
+value_t *is_string(const void *, const value_t *value);
+value_t *is_cons(const void *, const value_t *value);
+value_t *is_bool(const void *, const value_t *value);
+value_t *is_function(const void *, const value_t *value);
+value_t *is_symbol(const void *, const value_t *value);
+value_t *is_nil(const void *, const value_t *value);
+
 value_t *cpp_concat(const void *, const value_t *value_1,
                     const value_t *value_2);
 

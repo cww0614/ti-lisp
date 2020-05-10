@@ -162,6 +162,14 @@ let translate (stmts : stmt list) =
            ("<=", "cpp_leq", 2, 2);
            (">=", "cpp_geq", 2, 2);
            ("++", "cpp_concat", 2, 2);
+           ("integer?", "is_integer", 1, 1);
+           ("char?", "is_char", 1, 1);
+           ("string?", "is_string", 1, 1);
+           ("cons?", "is_cons", 1, 1);
+           ("bool?", "is_bool", 1, 1);
+           ("function?", "is_function", 1, 1);
+           ("symbol?", "is_symbol", 1, 1);
+           ("nil?", "is_nil", 1, 1);
          ])
   in
 

@@ -1,1 +1,1 @@
-(display (< "abcd" "abc"))
+(display (cons? () ))

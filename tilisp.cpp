@@ -4,6 +4,7 @@
 #include "helper.h"
 
 value_t *display(const void*, const value_t *value) {
+  if (value == nullptr) return nullptr;
   switch (value->type)
   {
   case TYPE_INTEGER:
@@ -246,6 +247,56 @@ value_t *cpp_concat(const void*, const value_t *value_1, const value_t *value_2)
     }
 }
 
+value_t *is_integer(const void *, const value_t *value){
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value->type == TYPE_INTEGER);
+  return res;
+}
+value_t *is_char(const void *, const value_t *value){
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value->type == TYPE_CHAR);
+  return res;
+}
+value_t *is_string(const void *, const value_t *value){
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value->type == TYPE_STRING);
+  return res;
+}
+value_t *is_cons(const void *, const value_t *value){
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value->type == TYPE_CONS);
+  return res;
+}
+value_t *is_bool(const void *, const value_t *value){
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value->type == TYPE_BOOL);
+  return res;
+}
+value_t *is_symbol(const void *, const value_t *value){
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value->type == TYPE_SYMBOL);
+  return res;
+}
+value_t *is_function(const void *, const value_t *value){
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value->type == TYPE_FUNC);
+  return res;
+}
+value_t *is_nil(const void *, const value_t *value){
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value == nullptr);
+  return res;
+}
+
+// General utilities.
 // Checking functions during irgen.
 void check_type(const value_t *value, uint64_t expected_type) {
   if (value == nullptr || value->type != expected_type) {
