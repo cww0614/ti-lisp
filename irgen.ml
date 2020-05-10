@@ -259,18 +259,17 @@ let translate (stmts : stmt list) =
             && L.classify_type (L.element_type fp_type) = L.TypeKind.Integer
           then (
             (* Start wrapping *)
-            (* TODO: support vaarg builtin here *)
-            (* TODO: calculate args *)
             let func_ptr =
               L.build_bitcast llvalue i8_ptr_t "func_ptr" builder
             in
             let alloca = build_malloc value_type "builtin_wraper" builder in
+            let arg_num = (Array.length params) - 1 in
             build_literal alloca type_func value_type_func
               [
                 (1, func_ptr);
                 (2, L.const_null i8_ptr_t);
-                (3, L.const_int i8_t 1);
-                (4, L.const_int i8_t 1);
+                (3, L.const_int i8_t arg_num);
+                (4, L.const_int i8_t arg_num);
               ]
               builder;
             { value = alloca; real_func = Some llvalue } )
