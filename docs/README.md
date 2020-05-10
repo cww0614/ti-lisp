@@ -14,6 +14,16 @@ OCaml packages from opam:
 1. llvm
 2. ocamlbuild
 
+Boehm GC:
+
+```bash
+git clone https://github.com/ivmai/bdwgc
+cd bdwgc
+./autogen.sh
+./configure
+make -j 4
+```
+
 ### Setup
 
 1. Build the compiler:
