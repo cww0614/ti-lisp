@@ -17,6 +17,7 @@ OCaml packages from opam:
 Boehm GC:
 
 ```bash
+cd ti-lisp # cd to the project root
 git clone https://github.com/ivmai/bdwgc
 cd bdwgc
 ./autogen.sh
