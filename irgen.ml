@@ -309,7 +309,7 @@ let translate (stmts : stmt list) =
         build_memcpy (llvalue_of value_decl) (llvalue_of decl) builder;
         (st, builder, decl)
     | Expr expr ->
-        let builder, decl = build_expr func decl st builder expr in
+        let builder, decl = build_temp_expr func "" st builder expr in
         (st, builder, decl)
   and declare_expr (name : string) (st : symbol_table) (builder : L.llbuilder) :
       expr -> value_t = function
