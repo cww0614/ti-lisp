@@ -14,10 +14,10 @@ OCaml packages from opam:
 1. llvm
 2. ocamlbuild
 
-Boehm GC (or execute `make fakegc` to skip this step):
+Boehm GC (optional, will not have GC if skipped):
 
 ```bash
-# Make sure GNU Autotools (Automake Autoconf and Libtool) are installed before compiling
+# Make sure GNU Autotools are installed before compiling
 cd ti-lisp # cd to the project root
 git clone https://github.com/ivmai/bdwgc
 cd bdwgc
