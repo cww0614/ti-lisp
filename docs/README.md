@@ -6,7 +6,7 @@
 
 System packages:
 
-1. llvm-dev >= 6.0
+1. llvm-dev >= 9.0
 2. cmake >= 3.10
 
 OCaml packages from opam:

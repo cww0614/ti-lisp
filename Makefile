@@ -4,7 +4,7 @@ SRC_FILES = ast.ml irgen.ml macro.ml parser.mly sast.ml scanner.mll semant.ml sy
 TEST_FILES = testing.ml
 RUNTIME_OBJS = tilisp.o helper.o
 
-all: tilisp.native testing.native libtilisp.a
+all: tilisp.native testing.native libtilisp.a fakegc
 
 fakegc: bdwgc/libgc.a
 
