@@ -70,6 +70,8 @@ value_t *cpp_leq(const void *, const value_t *value_1, const value_t *value_2);
 value_t *cpp_geq(const void *, const value_t *value_1, const value_t *value_2);
 value_t *cpp_concat(const void *, const value_t *value_1,
                     const value_t *value_2);
+
+void *GC_malloc(size_t size);
 }
 
 #endif /* end of include guard: TI_LISP_BUILTIN_H */

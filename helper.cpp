@@ -29,7 +29,7 @@ const char *type_name(uint8_t type) {
 }
 
 char* concat_string_struct(string_struct tmp1, string_struct tmp2){
-    char* concat_string = new char[tmp1.size+tmp2.size];
+    char* concat_string = (char*)GC_malloc(tmp1.size+tmp2.size);
     int idx = 0;
     for (; idx < tmp1.size; ++idx){
         concat_string[idx] = tmp1.data[idx];
@@ -39,4 +39,3 @@ char* concat_string_struct(string_struct tmp1, string_struct tmp2){
     }
     return concat_string;
 }
-

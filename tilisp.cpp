@@ -33,7 +33,7 @@ value_t *cpp_add(const void*, const value_t *value_1, const value_t *value_2) {
         int tmp1 = (value_1->value).int_value;
         int tmp2 = (value_2->value).int_value;
 
-        value_t *output = new value_t;
+        value_t *output = (value_t*)GC_malloc(sizeof(value_t));
         output->type = TYPE_INTEGER;
         output->value.int_value = tmp1+tmp2;
         return output;
@@ -51,7 +51,7 @@ value_t *cpp_mult(const void*, const value_t *value_1, const value_t *value_2) {
         int tmp1 = (value_1->value).int_value;
         int tmp2 = (value_2->value).int_value;
 
-        value_t *output = new value_t;
+        value_t *output = (value_t*)GC_malloc(sizeof(value_t));
         output->type = TYPE_INTEGER;
         output->value.int_value = tmp1*tmp2;
         return output;
@@ -69,7 +69,7 @@ value_t *cpp_div(const void*, const value_t *value_1, const value_t *value_2) {
         int tmp1 = (value_1->value).int_value;
         int tmp2 = (value_2->value).int_value;
 
-        value_t *output = new value_t;
+        value_t *output = (value_t*)GC_malloc(sizeof(value_t));
         output->type = TYPE_INTEGER;
         output->value.int_value = tmp1 / tmp2;
         return output;
@@ -87,7 +87,7 @@ value_t *cpp_subtract(const void*, const value_t *value_1, const value_t *value_
         int tmp1 = (value_1->value).int_value;
         int tmp2 = (value_2->value).int_value;
 
-        value_t *output = new value_t;
+        value_t *output = (value_t*)GC_malloc(sizeof(value_t));
         output->type = TYPE_INTEGER;
         output->value.int_value = tmp1 - tmp2;
         return output;
@@ -102,7 +102,7 @@ value_t *cpp_subtract(const void*, const value_t *value_1, const value_t *value_
 // Logical operations.
 
 value_t *cpp_equal(const void*, const value_t *value_1, const value_t *value_2) {
-  value_t *res = new value_t;
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
@@ -135,7 +135,7 @@ value_t *cpp_equal(const void*, const value_t *value_1, const value_t *value_2) 
 }
 
 value_t *cpp_less_than(const void*, const value_t *value_1, const value_t *value_2) {
-  value_t *res = new value_t;
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
@@ -161,7 +161,7 @@ value_t *cpp_less_than(const void*, const value_t *value_1, const value_t *value
 }
 
 value_t *cpp_more_than(const void*, const value_t *value_1, const value_t *value_2) {
-  value_t *res = new value_t;
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
@@ -187,7 +187,7 @@ value_t *cpp_more_than(const void*, const value_t *value_1, const value_t *value
 }
 
 value_t *cpp_leq(const void*, const value_t *value_1, const value_t *value_2) {
-  value_t *res = new value_t;
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
@@ -207,7 +207,7 @@ value_t *cpp_leq(const void*, const value_t *value_1, const value_t *value_2) {
 }
 
 value_t *cpp_geq(const void*, const value_t *value_1, const value_t *value_2) {
-  value_t *res = new value_t;
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
     case TYPE_INTEGER:
@@ -235,7 +235,7 @@ value_t *cpp_concat(const void*, const value_t *value_1, const value_t *value_2)
         tmp3.size = tmp1.size + tmp2.size;
         tmp3.data = concat_string_struct(tmp1,tmp2);
 
-        value_t *output = new value_t;
+        value_t *output = (value_t*)GC_malloc(sizeof(value_t));
         output->type = TYPE_STRING;
         output->value.string_value = tmp3;
         return output;

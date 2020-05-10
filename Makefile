@@ -2,6 +2,7 @@
 
 SRC_FILES = ast.ml irgen.ml macro.ml parser.mly sast.ml scanner.mll semant.ml symtable.ml tilisp.ml utils.ml
 TEST_FILES = testing.ml
+RUNTIME_OBJS = tilisp.o helper.o
 
 all: tilisp.native testing.native libtilisp.a
 
@@ -11,19 +12,18 @@ tilisp.native: $(SRC_FILES)
 testing.native: $(TEST_FILES)
 	ocamlbuild -no-hygiene -lib unix testing.native
 
-tilisp.o: tilisp.h tilisp.cpp helper.cpp helper.h
-	g++ tilisp.cpp -c -o tilisp.o
-	g++ helper.cpp -c -o helper.o
+%.o: %.cpp %.h
+	g++ -Ibdwgc/include -c -o $@ $<
 
-libtilisp.a: tilisp.o helper.o
-	ar -crs libtilisp.a tilisp.o helper.o
+libtilisp.a: $(RUNTIME_OBJS)
+	ar -crs libtilisp.a $^
 	ranlib libtilisp.a
 
 test: testing.native libtilisp.a
 	./testing.native
 
 clean:
-	rm -rf *.o *.a *.ll _build *.native
+	rm -rf *.out *.s *.o *.a *.ll _build *.native
 
 prune:
 	rm tilisp.o

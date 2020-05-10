@@ -89,6 +89,15 @@ let translate (stmts : stmt list) =
     L.declare_function "check_func" func_type the_module
   in
 
+  let gc_alloc_func =
+    let func_type = L.function_type i8_ptr_t [| i64_t |] in
+    L.declare_function "GC_malloc" func_type the_module
+  in
+  let build_malloc tp name builder =
+    let mem = L.build_call gc_alloc_func [| L.size_of tp |] "" builder in
+    L.build_bitcast mem (L.pointer_type tp) "" builder
+  in
+
   let build_literal alloca type_value ltype values builder =
     (* type_field is the tag in the llvm struct member*)
     let type_field = L.build_struct_gep alloca 0 "value_type" builder in
@@ -255,7 +264,7 @@ let translate (stmts : stmt list) =
             let func_ptr =
               L.build_bitcast llvalue i8_ptr_t "func_ptr" builder
             in
-            let alloca = L.build_malloc value_type "builtin_wraper" builder in
+            let alloca = build_malloc value_type "builtin_wraper" builder in
             build_literal alloca type_func value_type_func
               [
                 (1, func_ptr);
@@ -306,14 +315,14 @@ let translate (stmts : stmt list) =
         | Some value -> maybe_wrap_builtin value builder
         | None -> raise (Failure "Undefined variable") )
     | Lambda (args, body) ->
-        let llvalue = L.build_malloc value_type name builder in
+        let llvalue = build_malloc value_type name builder in
         let arg_size = List.length args in
         let func_type = function_type arg_size in
         let func = L.define_function "lambda" func_type the_module in
         L.set_linkage L.Linkage.Internal func;
         { value = llvalue; real_func = Some func }
     | _ ->
-        let llvalue = L.build_malloc value_type name builder in
+        let llvalue = build_malloc value_type name builder in
         make_val llvalue
   and build_temp_expr (func : L.llvalue) (name : string) (st : symbol_table)
       (builder : L.llbuilder) (expr : expr) : L.llbuilder * value_t =
@@ -502,7 +511,7 @@ let translate (stmts : stmt list) =
               Utils.fold_map (build_temp_expr the_func "" st) builder args
             in
             let args = List.map llvalue_of args in
-            let args = (L.const_null i8_ptr_t) :: args in
+            let args = L.const_null i8_ptr_t :: args in
             let args = Array.of_list args in
             let ret = L.build_call func args "ret" builder in
             (builder, make_val ret)
@@ -525,9 +534,7 @@ let translate (stmts : stmt list) =
         let access_link_type =
           L.struct_type context (Array.make (List.length deps) value_ptr_type)
         in
-        let access_link =
-          L.build_malloc access_link_type "access_link" builder
-        in
+        let access_link = build_malloc access_link_type "access_link" builder in
 
         List.iteri
           (fun index dep ->
@@ -626,13 +633,13 @@ let translate (stmts : stmt list) =
         st
         (List.mapi (fun i name -> (i, name)) deps)
     in
-    let value = make_val (L.build_malloc value_type "" builder) in
+    let value = make_val (build_malloc value_type "" builder) in
     let _, builder, ret_value = build_stmt_block func value st builder stmts in
     ignore (L.build_ret (llvalue_of ret_value) builder)
   and build_main_func_body (func : L.llvalue) (st : symbol_table)
       (stmts : stmt list) =
     let builder = L.builder_at_end context (L.entry_block func) in
-    let value = make_val (L.build_malloc value_type "" builder) in
+    let value = make_val (build_malloc value_type "" builder) in
     let _, builder, _ = build_stmt_block func value st builder stmts in
     ignore (L.build_ret (L.const_int i32_t 0) builder)
   in
