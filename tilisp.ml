@@ -60,6 +60,9 @@ let _ =
             raise (Failure "opt: non-zero exit code")
           else if command "llc -relocation-model=pic llvm.optimized.out" != 0 then
             raise (Failure "llc: non-zero exit code")
-          else if command "g++ llvm.optimized.out.s -L./ -ltilisp -Lbdwgc -lgc -o a.out" != 0 then
+          else if (if file_exists "./bdwgc/libgc.la" then
+                     command "libtool --quiet --mode=link g++ llvm.optimized.out.s -L./ -ltilisp -o a.out ./bdwgc/libgc.la"
+                   else
+                     command "g++ llvm.optimized.out.s -L./ -ltilisp -L./bdwgc -lgc -o a.out") != 0 then
             raise (Failure "g++: non-zero exit code")
           else () )

@@ -17,6 +17,7 @@ OCaml packages from opam:
 Boehm GC (or execute `make fakegc` to skip this step):
 
 ```bash
+# Make sure GNU Autotools (Automake Autoconf and Libtool) are installed before compiling
 cd ti-lisp # cd to the project root
 git clone https://github.com/ivmai/bdwgc
 cd bdwgc
