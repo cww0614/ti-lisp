@@ -304,8 +304,8 @@ let translate (stmts : stmt list) =
           | _ -> raise (Failure "Undefined variable")
         in
         let value_decl = declare_expr name st builder value in
-        let st = Symtable.add name value_decl st in
         let builder, value_decl = build_expr func value_decl st builder value in
+        let st = Symtable.add name value_decl st in
         build_memcpy (llvalue_of value_decl) (llvalue_of decl) builder;
         (st, builder, decl)
     | Expr expr ->
