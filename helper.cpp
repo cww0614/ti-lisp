@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "tilisp.h"
 #include "helper.h"
 
@@ -38,4 +40,12 @@ char* concat_string_struct(string_struct tmp1, string_struct tmp2){
         concat_string[idx+i] = tmp2.data[i];
     }
     return concat_string;
+}
+
+void assert_not_nil(const value_t *value){
+  if (value == nullptr){
+    std::cout << "[Fatal] Unexpected Nil Value" << std::endl;
+    exit(1);
+  }
+  return;
 }

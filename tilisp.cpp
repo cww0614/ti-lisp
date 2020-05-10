@@ -4,7 +4,11 @@
 #include "helper.h"
 
 value_t *display(const void*, const value_t *value) {
-  if (value == nullptr) return nullptr;
+  if (value == nullptr){
+    std::cout << "Nil" << std::endl;
+    return nullptr;
+  }
+
   switch (value->type)
   {
   case TYPE_INTEGER:
@@ -29,6 +33,8 @@ value_t *display(const void*, const value_t *value) {
 // Assumes semant has already filter out pairs which don't have the same type
 // though this hasn't been implemented yet
 value_t *cpp_add(const void*, const value_t *value_1, const value_t *value_2) {
+    assert_not_nil(value_1);
+    assert_not_nil(value_2);
     if (value_1->type == TYPE_INTEGER) {
         /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
         int tmp1 = (value_1->value).int_value;
@@ -47,6 +53,8 @@ value_t *cpp_add(const void*, const value_t *value_1, const value_t *value_2) {
 }
 
 value_t *cpp_mult(const void*, const value_t *value_1, const value_t *value_2) {
+    assert_not_nil(value_1);
+    assert_not_nil(value_2);
     if (value_1->type == TYPE_INTEGER) {
         /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
         int tmp1 = (value_1->value).int_value;
@@ -65,6 +73,8 @@ value_t *cpp_mult(const void*, const value_t *value_1, const value_t *value_2) {
 }
 
 value_t *cpp_div(const void*, const value_t *value_1, const value_t *value_2) {
+    assert_not_nil(value_1);
+    assert_not_nil(value_2);
     if (value_1->type == TYPE_INTEGER) {
         /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
         int tmp1 = (value_1->value).int_value;
@@ -83,6 +93,8 @@ value_t *cpp_div(const void*, const value_t *value_1, const value_t *value_2) {
 }
 
 value_t *cpp_subtract(const void*, const value_t *value_1, const value_t *value_2) {
+    assert_not_nil(value_1);
+    assert_not_nil(value_2);
     if (value_1->type == TYPE_INTEGER) {
         /* int int_value = (value_1->value).int_value + (value_1->value).int_value; */
         int tmp1 = (value_1->value).int_value;
@@ -103,6 +115,8 @@ value_t *cpp_subtract(const void*, const value_t *value_1, const value_t *value_
 // Logical operations.
 
 value_t *cpp_equal(const void*, const value_t *value_1, const value_t *value_2) {
+  assert_not_nil(value_1);
+  assert_not_nil(value_2);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -136,6 +150,8 @@ value_t *cpp_equal(const void*, const value_t *value_1, const value_t *value_2) 
 }
 
 value_t *cpp_less_than(const void*, const value_t *value_1, const value_t *value_2) {
+  assert_not_nil(value_1);
+  assert_not_nil(value_2);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -162,6 +178,8 @@ value_t *cpp_less_than(const void*, const value_t *value_1, const value_t *value
 }
 
 value_t *cpp_more_than(const void*, const value_t *value_1, const value_t *value_2) {
+  assert_not_nil(value_1);
+  assert_not_nil(value_2);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -188,6 +206,8 @@ value_t *cpp_more_than(const void*, const value_t *value_1, const value_t *value
 }
 
 value_t *cpp_leq(const void*, const value_t *value_1, const value_t *value_2) {
+  assert_not_nil(value_1);
+  assert_not_nil(value_2);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -208,6 +228,8 @@ value_t *cpp_leq(const void*, const value_t *value_1, const value_t *value_2) {
 }
 
 value_t *cpp_geq(const void*, const value_t *value_1, const value_t *value_2) {
+  assert_not_nil(value_1);
+  assert_not_nil(value_2);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   switch (value_1->type){
@@ -229,61 +251,70 @@ value_t *cpp_geq(const void*, const value_t *value_1, const value_t *value_2) {
 
 // Everything else
 value_t *cpp_concat(const void*, const value_t *value_1, const value_t *value_2) {
-    if (value_1->type == TYPE_STRING){
-        string_struct tmp1 = (value_1->value).string_value;
-        string_struct tmp2 = (value_2->value).string_value;
-        string_struct tmp3;
-        tmp3.size = tmp1.size + tmp2.size;
-        tmp3.data = concat_string_struct(tmp1,tmp2);
+  assert_not_nil(value_1);
+  assert_not_nil(value_2);
+  if (value_1->type == TYPE_STRING){
+      string_struct tmp1 = (value_1->value).string_value;
+      string_struct tmp2 = (value_2->value).string_value;
+      string_struct tmp3;
+      tmp3.size = tmp1.size + tmp2.size;
+      tmp3.data = concat_string_struct(tmp1,tmp2);
 
-        value_t *output = (value_t*)GC_malloc(sizeof(value_t));
-        output->type = TYPE_STRING;
-        output->value.string_value = tmp3;
-        return output;
-    }
-    else{
-        std::cout << "++ not implemented for this type" << std::endl;
-        exit(1);
-    }
+      value_t *output = (value_t*)GC_malloc(sizeof(value_t));
+      output->type = TYPE_STRING;
+      output->value.string_value = tmp3;
+      return output;
+  }
+  else{
+      std::cout << "++ not implemented for this type" << std::endl;
+      exit(1);
+  }
 }
 
 value_t *is_integer(const void *, const value_t *value){
+  assert_not_nil(value);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   res->value.bool_value = (value->type == TYPE_INTEGER);
   return res;
 }
 value_t *is_char(const void *, const value_t *value){
+  assert_not_nil(value);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   res->value.bool_value = (value->type == TYPE_CHAR);
   return res;
 }
 value_t *is_string(const void *, const value_t *value){
+  assert_not_nil(value);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   res->value.bool_value = (value->type == TYPE_STRING);
   return res;
 }
 value_t *is_cons(const void *, const value_t *value){
+  assert_not_nil(value);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   res->value.bool_value = (value->type == TYPE_CONS);
   return res;
 }
 value_t *is_bool(const void *, const value_t *value){
+  assert_not_nil(value);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   res->value.bool_value = (value->type == TYPE_BOOL);
   return res;
 }
 value_t *is_symbol(const void *, const value_t *value){
+  assert_not_nil(value);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   res->value.bool_value = (value->type == TYPE_SYMBOL);
   return res;
 }
 value_t *is_function(const void *, const value_t *value){
+  assert_not_nil(value);
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   res->value.bool_value = (value->type == TYPE_FUNC);
