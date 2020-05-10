@@ -580,12 +580,7 @@ let translate (stmts : stmt list) =
         build_literal (llvalue_of decl) type_cons value_type_cons
           [ (1, car); (2, cdr) ] builder;
         (builder, decl)
-    | Nil ->
-        ignore
-          (L.build_store
-             (L.const_null value_ptr_type)
-             (llvalue_of decl) builder);
-        (builder, decl)
+    | Nil -> (builder, make_val (L.const_null value_ptr_type))
     | Id _ -> (builder, decl)
   and build_func_body (deps : string list) (func : L.llvalue)
       (st : symbol_table) (stmts : stmt list) : unit =
