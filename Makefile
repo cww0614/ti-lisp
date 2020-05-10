@@ -6,7 +6,7 @@ RUNTIME_OBJS = tilisp.o helper.o
 
 all: tilisp.native testing.native libtilisp.a
 
-fakegc: bdwgc/fakegc.a
+fakegc: bdwgc/libgc.a
 
 tilisp.native: $(SRC_FILES)
 	ocamlbuild -no-hygiene -package llvm tilisp.native
@@ -17,11 +17,11 @@ testing.native: $(TEST_FILES)
 %.o: %.cpp %.h
 	g++ -c -o $@ $<
 
-bdwgc/fakegc.a:
+bdwgc/libgc.a:
 	mkdir -p bdwgc
-	gcc -c fakegc.c -o bdwgc/fakegc.o
-	ar -crs bdwgc/fakegc.a bdwgc/fakegc.o
-	ranlib bdwgc/fakegc.a
+	gcc -c fakegc.c -o bdwgc/libgc.o
+	ar -crs bdwgc/libgc.a bdwgc/libgc.o
+	ranlib bdwgc/libgc.a
 
 libtilisp.a: $(RUNTIME_OBJS)
 	ar -crs libtilisp.a $^
