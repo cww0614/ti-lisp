@@ -64,6 +64,7 @@ let ls_testcases = [
   ("[exe] high order builtin functions", "exe_high_order_builtin", "-e");
   ("[exe] op string concat", "exe_string_concat", "-e");
   ("[exe] op cons on empty list", "exe_cons_empty_list", "-e");
+  ("[exe] counter", "exe_counter", "-e")
 
 ] in
 
