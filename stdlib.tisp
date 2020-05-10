@@ -9,7 +9,7 @@
     ((_ initial (func args ...))
      (func initial args ...))
     ((_ initial (func args ...) more ...)
-     (-> (func initial args) more ...))
+     (-> (func initial args ...) more ...))
     ((_ initial (func) more ...)
      (-> (func initial) more ...))))
 
