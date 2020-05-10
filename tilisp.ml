@@ -58,6 +58,9 @@ let _ =
           close_out out;
           if command "opt -S -O3 llvm.out -o llvm.optimized.out" != 0 then
             raise (Failure "opt: non-zero exit code")
+          (* Replace malloc with GC_malloc *)
+          else if command "sed -i 's/malloc(i32/GC_malloc(i64/g' llvm.optimized.out" != 0 then
+            raise (Failure "sed: non-zero exit code")
           else if command "llc -relocation-model=pic llvm.optimized.out" != 0 then
             raise (Failure "llc: non-zero exit code")
           else if (if file_exists "./bdwgc/libgc.la" then

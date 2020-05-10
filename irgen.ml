@@ -89,14 +89,7 @@ let translate (stmts : stmt list) =
     L.declare_function "check_func" func_type the_module
   in
 
-  let gc_alloc_func =
-    let func_type = L.function_type i8_ptr_t [| i64_t |] in
-    L.declare_function "GC_malloc" func_type the_module
-  in
-  let build_malloc tp name builder =
-    let mem = L.build_call gc_alloc_func [| L.size_of tp |] "" builder in
-    L.build_bitcast mem (L.pointer_type tp) "" builder
-  in
+  let build_malloc tp name builder = L.build_malloc tp name builder in
 
   let build_literal alloca type_value ltype values builder =
     (* type_field is the tag in the llvm struct member*)
@@ -263,7 +256,7 @@ let translate (stmts : stmt list) =
               L.build_bitcast llvalue i8_ptr_t "func_ptr" builder
             in
             let alloca = build_malloc value_type "builtin_wraper" builder in
-            let arg_num = (Array.length params) - 1 in
+            let arg_num = Array.length params - 1 in
             build_literal alloca type_func value_type_func
               [
                 (1, func_ptr);
