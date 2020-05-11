@@ -39,6 +39,9 @@ void display_helper(const value_t *value, bool lst){
   case TYPE_CONS:
     cons_printer(const_cast<value_t*>(value),true);
     break;
+  case TYPE_FLOAT:
+    std::cout << value->value.real_value << std::endl;
+    break;
   default:
     std::cout << "'display' not implemented for this type.";
     break;
@@ -68,6 +71,14 @@ value_t *cpp_add(const void*, const value_t *value_1, const value_t *value_2) {
         output->value.int_value = tmp1+tmp2;
         return output;
     }
+    else if (value_1->type == TYPE_FLOAT && value_2->type == TYPE_FLOAT){
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      value_t* res = (value_t*)GC_malloc(sizeof(value_t));
+      res->type = TYPE_FLOAT;
+      res->value.real_value = v1 + v2;
+      return res;
+    }
     else{
         std::cout << "+ not implemented for this type" << std::endl;
         exit(1);
@@ -87,6 +98,14 @@ value_t *cpp_mult(const void*, const value_t *value_1, const value_t *value_2) {
         output->type = TYPE_INTEGER;
         output->value.int_value = tmp1*tmp2;
         return output;
+    }
+    else if (value_1->type == TYPE_FLOAT && value_2->type == TYPE_FLOAT){
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      value_t* res = (value_t*)GC_malloc(sizeof(value_t));
+      res->type = TYPE_FLOAT;
+      res->value.real_value = v1 * v2;
+      return res;
     }
     else{
         std::cout << "* not implemented for this type" << std::endl;
@@ -113,6 +132,18 @@ value_t *cpp_div(const void*, const value_t *value_1, const value_t *value_2) {
           return output;
         }
     }
+    else if (value_1->type == TYPE_FLOAT && value_2->type == TYPE_FLOAT){
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      if (v2 == 0) {
+        std::cout << "/ cannot divide by zero" << std::endl;
+        exit(1);
+      }
+      value_t* res = (value_t*)GC_malloc(sizeof(value_t));
+      res->type = TYPE_FLOAT;
+      res->value.real_value = v1 / v2;
+      return res;
+    }
     else{
         std::cout << "/ not implemented for this type" << std::endl;
         exit(1);
@@ -132,6 +163,14 @@ value_t *cpp_subtract(const void*, const value_t *value_1, const value_t *value_
         output->type = TYPE_INTEGER;
         output->value.int_value = tmp1 - tmp2;
         return output;
+    }
+    else if (value_1->type == TYPE_FLOAT && value_2->type == TYPE_FLOAT){
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      value_t* res = (value_t*)GC_malloc(sizeof(value_t));
+      res->type = TYPE_FLOAT;
+      res->value.real_value = v1 - v2;
+      return res;
     }
     else{
         std::cout << "/ not implemented for this type" << std::endl;
@@ -153,6 +192,13 @@ value_t *cpp_equal(const void*, const value_t *value_1, const value_t *value_2) 
       int v1int = (value_1->value).int_value;
       int v2int = (value_2->value).int_value;
       res->value.bool_value = (v1int == v2int);
+    }
+      break;
+    case TYPE_FLOAT:
+    {
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      res->value.bool_value = (v1 == v2);
     }
       break;
     case TYPE_BOOL:
@@ -190,6 +236,13 @@ value_t *cpp_less_than(const void*, const value_t *value_1, const value_t *value
       res->value.bool_value = (v1int < v2int);
     }
     break;
+    case TYPE_FLOAT:
+    {
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      res->value.bool_value = (v1 < v2);
+    }
+      break;
     case TYPE_STRING:
     {
       uint64_t l1 = (value_1->value).string_value.size;
@@ -218,6 +271,13 @@ value_t *cpp_more_than(const void*, const value_t *value_1, const value_t *value
       res->value.bool_value = (v1int > v2int);
     }
     break;
+    case TYPE_FLOAT:
+    {
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      res->value.bool_value = (v1 > v2);
+    }
+      break;
     case TYPE_STRING:
     {
       uint64_t l1 = (value_1->value).string_value.size;
@@ -246,7 +306,14 @@ value_t *cpp_leq(const void*, const value_t *value_1, const value_t *value_2) {
       res->value.bool_value = (v1int <= v2int);
     }
       break;
-
+    case TYPE_FLOAT:
+    {
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      res->value.bool_value = (v1 <= v2);
+    }
+      break;
+    
     default:
       std::cout << "'<' not implemented for this type" << std::endl;
       res = nullptr;
@@ -268,7 +335,14 @@ value_t *cpp_geq(const void*, const value_t *value_1, const value_t *value_2) {
       res->value.bool_value = (v1int >= v2int);
     }
       break;
-
+    case TYPE_FLOAT:
+    {
+      double v1 = (value_1->value).real_value;
+      double v2 = (value_2->value).real_value;
+      res->value.bool_value = (v1 >= v2);
+    }
+      break;
+    
     default:
       std::cout << "'>' not implemented for this type" << std::endl;
       res = nullptr;
@@ -304,6 +378,13 @@ value_t *is_integer(const void *, const value_t *value){
   value_t *res = (value_t*)GC_malloc(sizeof(value_t));
   res->type = TYPE_BOOL;
   res->value.bool_value = (value->type == TYPE_INTEGER);
+  return res;
+}
+value_t *is_float(const void *, const value_t *value){
+  assert_not_nil(value);
+  value_t *res = (value_t*)GC_malloc(sizeof(value_t));
+  res->type = TYPE_BOOL;
+  res->value.bool_value = (value->type == TYPE_FLOAT);
   return res;
 }
 value_t *is_char(const void *, const value_t *value){

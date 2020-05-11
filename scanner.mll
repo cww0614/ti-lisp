@@ -1,6 +1,7 @@
 { open Parser }
 
 let id_char = ['a' - 'z' 'A' - 'Z' '0' - '9' '!' '@' '$' '%' '^' '&' '*' '-' '_' '=' '+' '|' '\\' '/' '<' '>' ':' '~' '?']
+let digit = ['0' - '9']
 
 rule token = parse
   [' ' '\t' '\r' '\n']      { token lexbuf }
@@ -23,7 +24,8 @@ rule token = parse
 | '('                       { LEFT_BRACKET }
 | ')'                       { RIGHT_BRACKET }
 | '"'                       { read_string (Buffer.create 17) lexbuf }
-| ['0' - '9']+ as lit       { INT_LITERAL(int_of_string lit) }
+| digit+ as lit             { INT_LITERAL(int_of_string lit) }
+| digit+ '.' digit* as num  { FLT_LITERAL(float_of_string num) }
 | id_char+ as id            { IDENTIFIER(id) }
 | _ as char                 { raise (Failure("illegal character " ^ Char.escaped char)) }
 

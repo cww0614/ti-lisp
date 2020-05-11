@@ -14,6 +14,7 @@ enum value_type {
   TYPE_BOOL = 4,
   TYPE_FUNC = 5,
   TYPE_SYMBOL = 6,
+  TYPE_FLOAT = 7,
 };
 
 struct string_struct {
@@ -26,6 +27,7 @@ struct value_t {
 
   union {
     int64_t int_value;
+    double real_value;
     bool bool_value;
     char char_value;
 
@@ -71,6 +73,7 @@ value_t *cpp_geq(const void *, const value_t *value_1, const value_t *value_2);
 
 value_t *is_integer(const void *, const value_t *value);
 value_t *is_char(const void *, const value_t *value);
+value_t *is_float(const void *, const value_t *value);
 value_t *is_string(const void *, const value_t *value);
 value_t *is_cons(const void *, const value_t *value);
 value_t *is_bool(const void *, const value_t *value);

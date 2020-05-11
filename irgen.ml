@@ -28,6 +28,7 @@ let translate (stmts : stmt list) =
   let i8_t = L.i8_type context in
   let i32_t = L.i32_type context in
   let i64_t = L.i64_type context in
+  let f64_t = L.double_type context in
 
   let i8_ptr_t = L.pointer_type i8_t in
 
@@ -53,11 +54,13 @@ let translate (stmts : stmt list) =
   and type_cons = L.const_int i64_t 3
   and type_bool = L.const_int i64_t 4
   and type_func = L.const_int i64_t 5
-  and type_symbol = L.const_int i64_t 6 in
+  and type_symbol = L.const_int i64_t 6 
+  and type_float = L.const_int i64_t 7 in
 
   (* When using a value as specific type, the value_type will be
      bitcasted to one of theses types *)
   let value_type_int = create_struct "value_t_int" context [| i64_t; i64_t |] in
+  let value_type_real = create_struct "value_t_real" context [| i64_t; f64_t |] in
   let value_type_char =
     create_struct "value_t_char" context [| i64_t; i8_t |]
   in
@@ -163,6 +166,7 @@ let translate (stmts : stmt list) =
            (">=", "cpp_geq", 2, 2);
            ("++", "cpp_concat", 2, 2);
            ("integer?", "is_integer", 1, 1);
+           ("float?", "is_float", 1, 1);
            ("char?", "is_char", 1, 1);
            ("string?", "is_string", 1, 1);
            ("cons?", "is_cons", 1, 1);
@@ -338,6 +342,10 @@ let translate (stmts : stmt list) =
           [ (1, L.const_int i64_t v) ]
           builder;
         (builder, decl)
+    | SFloat v ->
+        build_literal (llvalue_of decl) type_float value_type_real
+          [ (1, L.const_float f64_t v)] builder;
+          (builder, decl)
     | BoolLit v ->
         build_literal (llvalue_of decl) type_bool value_type_bool
           [ (1, L.const_int i1_t (if v then 1 else 0)) ]
