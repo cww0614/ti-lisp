@@ -84,6 +84,8 @@ value_t *cpp_concat(const void *, const value_t *value_1,
 value_t* cpp_cons(const void *, const value_t *value_1, const value_t *value_2);
 value_t* cpp_car(const void *, const value_t *value1);
 value_t* cpp_cdr(const void *, const value_t *value1);
+void display_helper(const value_t *value, bool lst);
+
 void *GC_malloc(size_t size);
 }
 

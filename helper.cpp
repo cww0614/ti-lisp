@@ -49,3 +49,10 @@ void assert_not_nil(const value_t *value){
   }
   return;
 }
+
+void check_if_cons(value_t* value){
+    if (value->type != TYPE_CONS){
+        std::cout << "List was not built correctly" << std::endl;
+        exit(1);
+    }
+}

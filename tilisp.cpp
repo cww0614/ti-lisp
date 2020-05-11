@@ -3,31 +3,54 @@
 #include "tilisp.h"
 #include "helper.h"
 
-value_t *display(const void*, const value_t *value) {
+// Needs to be here for the mutual recursion
+void cons_printer(value_t* value,bool root){
+    if (value==nullptr){
+        std::cout << ")";
+    }
+    else{
+        if (root) std::cout << "( ";
+        check_if_cons(value);
+        display_helper(value->value.cons_value.car,true);
+        std::cout << " ";
+        cons_printer(const_cast<value_t*>(value->value.cons_value.cdr),false);
+    }
+}
+void display_helper(const value_t *value, bool lst){
   if (value == nullptr){
     std::cout << "Nil" << std::endl;
-    return nullptr;
+    return;
   }
 
   switch (value->type)
   {
   case TYPE_INTEGER:
-    std::cout << value->value.int_value << std::endl;
+    std::cout << value->value.int_value;
     break;
   case TYPE_STRING:
-    std::cout << value->value.string_value.data << std::endl;
+    std::cout << value->value.string_value.data;
     break;
   case TYPE_CHAR:
-    std::cout << value->value.char_value << std::endl;
+    std::cout << value->value.char_value;
     break;
   case TYPE_BOOL:
-    std::cout << (value->value.bool_value? "true": "false") << std::endl;
+    std::cout << (value->value.bool_value? "true": "false");
+    break;
+  case TYPE_CONS:
+    cons_printer(const_cast<value_t*>(value),true);
     break;
   default:
-    std::cout << "'display' not implemented for this type." << std::endl;
+    std::cout << "'display' not implemented for this type.";
     break;
   }
-  return nullptr;
+  if (!lst){
+      std::cout << std::endl;
+  }
+}
+value_t *display(const void*, const value_t *value) {
+
+    display_helper(value,false);
+    return nullptr;
 }
 
 // Assumes semant has already filter out pairs which don't have the same type

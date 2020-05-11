@@ -100,6 +100,11 @@ let builtin_macros : symbol_table =
          {| (syntax-rules ()
                 ((display a b ...) (begin (display a) (display b ...)))) |}
          );
+         ( "list",
+         {| (syntax-rules ()
+                ((list a) (cons a '()))
+                ((list a b ...) (cons a (list b ...)))) |}
+         );
        ])
 
 let expand (symbol_table : symbol_table) (expr : expr) : symbol_table * expr =
