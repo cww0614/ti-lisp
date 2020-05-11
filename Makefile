@@ -9,7 +9,7 @@ all: tilisp.native testing.native libtilisp.a fakegc
 fakegc: bdwgc/libgc.a
 
 tilisp.native: $(SRC_FILES)
-	ocamlbuild -no-hygiene -package llvm tilisp.native
+	ocamlbuild -no-hygiene -package llvm -lib unix tilisp.native
 
 testing.native: $(TEST_FILES)
 	ocamlbuild -no-hygiene -lib unix testing.native

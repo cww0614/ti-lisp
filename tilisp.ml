@@ -67,7 +67,14 @@ let _ =
           if command "opt -S -O3 llvm.out -o llvm.optimized.out" != 0 then
             raise (Failure "opt: non-zero exit code")
           (* Replace malloc with GC_malloc *)
-          else if command "sed -i 's/malloc(i32/GC_malloc(i64/g' llvm.optimized.out" != 0 then
+          (* Workaround for OSX https://github.com/lmquang/til/issues/18 *)
+          else if (let ic = Unix.open_process_in "uname" in
+                    let unix_name = input_line ic in
+                    match unix_name with
+                    (* Mac *)
+                    "Darwin" -> command "sed -i '' 's/malloc(i32/GC_malloc(i64/g' llvm.optimized.out"
+                    (* Linux *)
+                    | _ -> command "sed -i 's/malloc(i32/GC_malloc(i64/g' llvm.optimized.out") != 0 then
             raise (Failure "sed: non-zero exit code")
           else if command "llc -relocation-model=pic llvm.optimized.out" != 0 then
             raise (Failure "llc: non-zero exit code")
