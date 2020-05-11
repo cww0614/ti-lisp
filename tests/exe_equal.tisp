@@ -1,1 +1,26 @@
 (display (= 1 1))
+(display (= 2 1))
+
+(display (= "hello" "hello"))
+(display (= "hello" "false"))
+
+(display (= true true))
+(display (= false true))
+
+(define a 99)
+(define b 99)
+(define c 10)
+(display (= a b))
+(display (= a c))
+
+(define d "hello")
+(define e "hello")
+(define f "goodbye")
+(display (= d e))
+(display (= d f))
+
+(define g false)
+(define h false)
+(define i true)
+(display (= g h))
+(display (= g i))

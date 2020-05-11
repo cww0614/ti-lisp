@@ -58,6 +58,12 @@ let ls_testcases = [
 
   ("[exe] set global variables", "exe_basic2", "-e");
 
+  ("[exe] op equal", "exe_equal", "-e");
+  ("[exe] op less than", "exe_less_than", "-e");
+  ("[exe] op more than", "exe_more_than", "-e");
+  ("[exe] op less than equal", "exe_less_than_equal", "-e");
+  ("[exe] op more than equal", "exe_more_than_equal", "-e");
+
   ("[exe] op plus", "exe_plus", "-e");
   ("[exe] op variadic plus", "exe_variadic_plus", "-e");
   ("[exe] op variadic mult", "exe_variadic_mult", "-e");

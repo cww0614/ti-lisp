@@ -1,0 +1,10 @@
+(display (< 1 2))
+(display (< 1 1))
+(display (< 1 0))
+
+(define a 1)
+(define b 2)
+(define c 0)
+(display (< a b))
+(display (< a a))
+(display (< a c))
