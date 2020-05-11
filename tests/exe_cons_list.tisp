@@ -1,0 +1,1 @@
+(display (cons 1 (list "hi" true 3)))
