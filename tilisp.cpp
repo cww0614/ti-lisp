@@ -80,10 +80,15 @@ value_t *cpp_div(const void*, const value_t *value_1, const value_t *value_2) {
         int tmp1 = (value_1->value).int_value;
         int tmp2 = (value_2->value).int_value;
 
-        value_t *output = (value_t*)GC_malloc(sizeof(value_t));
-        output->type = TYPE_INTEGER;
-        output->value.int_value = tmp1 / tmp2;
-        return output;
+        if (tmp2 == 0) {
+          std::cout << "/ cannot divide by zero" << std::endl;
+          exit(1);
+        } else {
+          value_t *output = (value_t*)GC_malloc(sizeof(value_t));
+          output->type = TYPE_INTEGER;
+          output->value.int_value = tmp1 / tmp2;
+          return output;
+        }
     }
     else{
         std::cout << "/ not implemented for this type" << std::endl;

@@ -1,0 +1,14 @@
+(display (+ 9999999999 9999))
+(display (- 120398098 123123))
+(display (- (+ 10 2) (+ 5 2)))
+
+(display (* 99 2))
+(display (* 99 (- 0 2)))
+(display (* (- 0 99) (- 0 2)))
+
+(display (/ 10 2))
+(display (/ 11 2))
+(display (/ (- 0 10) 2))
+(display (/ 10 (- 0 2)))
+(display (/ (- 0 10) (- 0 2)))
+(display (/ 10 0))

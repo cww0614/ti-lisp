@@ -58,6 +58,7 @@ let ls_testcases = [
 
   ("[exe] set global variables", "exe_basic2", "-e");
 
+  ("[exe] op arithmetic operators", "exe_arithmetic_ops", "-e");
   ("[exe] op equal", "exe_equal", "-e");
   ("[exe] op less than", "exe_less_than", "-e");
   ("[exe] op more than", "exe_more_than", "-e");
