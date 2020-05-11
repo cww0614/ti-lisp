@@ -1,0 +1,1 @@
+(display (list 1 2 (list "hi" true)))
