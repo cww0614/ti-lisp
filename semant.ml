@@ -45,6 +45,7 @@ let check (expr_list: A.expr list): stmt list =
       | A.CharLit c -> CharLit c
       | A.StrLit c -> StrLit c
       | A.IntLit c -> IntLit c
+      | A.FltLit c -> SFloat c
       | A.Nil -> Nil
       | A.Id name -> Symbol name
       | A.Cons (hd, tl) -> Cons (quote_expr hd, quote_expr tl)
@@ -325,6 +326,7 @@ let check (expr_list: A.expr list): stmt list =
         ("list", Function (Value, 1, 255));
         ("display", Function (Value, 1, 255));
         ("integer?", Function (Value, 1, 1));
+        ("float?", Function (Value, 1, 1));
         ("char?", Function (Value, 1, 1));
         ("string?", Function (Value, 1, 1));
         ("cons?", Function (Value, 1, 1));

@@ -4,6 +4,7 @@ and expr =
   | CharLit of char
   | StrLit of string
   | IntLit of int
+  | SFloat of float
   | BoolLit of bool
   | Id of string
   (* lists/cons: '(1 2 3 ...) *)
@@ -43,6 +44,7 @@ let rec string_of_stmt : stmt -> string = function
 and string_of_expr : expr -> string = function
   | StrLit x -> "\"" ^ String.escaped x ^ "\""
   | IntLit x -> string_of_int x
+  | SFloat x -> string_of_float  x
   | CharLit x -> "'" ^ Char.escaped x ^ "'"
   | BoolLit x -> if x then "#true" else "#false"
   | Id name -> name

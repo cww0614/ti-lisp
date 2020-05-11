@@ -54,6 +54,8 @@ let ls_testcases = [
   ("[exe] built-in display string", "exe_display_string", "-e");
   ("[exe] built-in display multiple", "exe_display_multiple", "-e");
 
+  ("[exe] float type", "exe_float", "-e");
+
   ("[exe] define variable", "exe_basic1", "-e");
 
   ("[exe] set global variables", "exe_basic2", "-e");
