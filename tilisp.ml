@@ -19,7 +19,7 @@ let _ =
       ("-e", Arg.Unit (set_action Exec), "Create executable from source code");
     ]
   in
-  let usage_msg = "usage: ./tilisp.native [-a|-m|-s|-l] [file.tlsp]" in
+  let usage_msg = "usage: ./tilisp.native [-a|-m|-s|-l] [file.tisp]" in
   let channel = ref stdin in
   Arg.parse speclist (fun filename -> channel := open_in filename) usage_msg;
 
