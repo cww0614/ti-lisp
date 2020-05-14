@@ -1,4 +1,17 @@
-# ti-lisp: a variant of Scheme 
+# TI-Lisp: a variant of Scheme
+
+<img src="logo.png" width="100px"/>
+
+## What is TI-Lisp?
+
+A LISP-like language with type inference, so users will be able to utilize the power of a LISP language combined with a form of “type checking”. We believe that type inference provides the best of both dynamically typed and statically typed languages: in that programs benefit from type checking, while at the same time not needing type annotations and being naturally generic, which can only be done in more conventional languages like Java and C++ through the use of templates.
+
+## Directory
+      .
+      ├── docs/ # Final Report + Documentation
+      ├── tests/ # Test cases containing .tisp and .log files
+      ├── bdwgc/ # Boehm garbage collector
+      └── ...
 
 ## Get started
 
