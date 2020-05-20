@@ -1,0 +1,57 @@
+# Addition
+# (display (+ 1 2))
+
+# Variadic Addition
+# (display (+ 1 2 3 4))
+
+# Boolean operations
+# (display (> 5 4))
+
+# String concatentation
+# (display (++ "Hello " "World!"))
+
+# Predicates
+# (display (integer? "Hi"))
+
+
+# Linked List data structure
+# (display (cons 1 '()))
+# (display (list 1 2 "hi" true))
+
+# Car/cdr
+# (display (car (list 1 2 3 4)))
+# (display (cdr (list 1 2 3 4)))
+
+# Lambda
+# (display ((lambda (x) (* 2 x)) 3))
+
+# Let
+# (display (let ((i 1) (j 2)) (+ i j)))
+
+# Cond
+# (display (if (> 1 2) "here" "there"))
+# (cond ((> 1 2) (display "here")) ((< 1 2) (display "there")) (else (display "shouldn't reach here") ))
+
+# Variable Definition
+# (display (define var "apple"))
+# (define var 2)
+# (display var)
+
+# Function Defintion
+# (define hi (lambda () (display "hi")))
+# (hi)
+
+# Recursion
+# (define (fact n) (if (= n 1) 1 (* n (fact (- n 1)))))
+# (display (fact 5))
+
+# Built in Higher Order Functions
+# (display (map (lambda (x) (* 2 x)) (list 1 2 3 4)))
+# (display (filter integer? (list 1 "hi" 2 false)))
+
+# Macros
+# (define-syntax mac (syntax-rules ()
+#     ((mac a) (display "hi")) ((mac a b) (display "there"))))
+# (mac 1)
+# (mac 1 2)
+# recursive macro -> see built in macros

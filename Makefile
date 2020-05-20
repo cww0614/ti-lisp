@@ -30,6 +30,8 @@ libtilisp.a: $(RUNTIME_OBJS)
 test: testing.native libtilisp.a
 	./testing.native
 
+demo: demo.tisp tilisp.native
+	./tilisp.native -e demo.tisp && ./a.out
 clean:
 	rm -rf *.out *.s *.o *.a *.ll _build *.native
 
