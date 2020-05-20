@@ -45,6 +45,16 @@
 # (define (fact n) (if (= n 1) 1 (* n (fact (- n 1)))))
 # (display (fact 5))
 
+# Closure
+# (define (clos n) (let ((value n))
+#              (lambda (x) (+ value x))
+#              ))
+# (display ((clos 9) 1))
+
+# Function as Input/Return Type
+# (define (func-obj g) (lambda (x) (g x 1)))
+# (display ((func-obj +) 2))
+
 # Built in Higher Order Functions
 # (display (map (lambda (x) (* 2 x)) (list 1 2 3 4)))
 # (display (filter integer? (list 1 "hi" 2 false)))
